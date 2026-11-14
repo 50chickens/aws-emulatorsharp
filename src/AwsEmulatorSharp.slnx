@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../tests/AwsEmulatorSharp.Core.Tests/AwsEmulatorSharp.Core.Tests.csproj" />
+  <Project Path="AwsEmulatorSharp.Core/AwsEmulatorSharp.Core.csproj" />
+</Solution>

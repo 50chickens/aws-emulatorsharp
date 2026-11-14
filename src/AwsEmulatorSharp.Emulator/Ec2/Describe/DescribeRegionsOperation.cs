@@ -1,10 +1,12 @@
 using System.Xml.Linq;
+using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.AspNetCore.Http;
 
-namespace AwsEmulatorSharp.Emulator.Wire;
+namespace AwsEmulatorSharp.Emulator.Ec2.Describe;
 
-public class DescribeRegionsOperation
+public class DescribeRegionsOperation : IQueryOperation
 {
+    private const string RegionsActionName = "DescribeRegions";
     private const string InvalidParameterValueCode = "InvalidParameterValue";
     private const string RegionNameParameterPrefix = "RegionName.";
     private const string ResponseRootElementName = "DescribeRegionsResponse";
@@ -14,30 +16,28 @@ public class DescribeRegionsOperation
     private const string RegionNameElementName = "regionName";
     private const string RegionEndpointElementName = "regionEndpoint";
 
-    private readonly IWireConfiguration _configuration;
+    private readonly Ec2Configuration _configuration;
     private readonly QueryResponseWriter _writer;
 
-    public DescribeRegionsOperation(IWireConfiguration configuration, QueryResponseWriter writer)
+    public DescribeRegionsOperation(Ec2Configuration configuration, QueryResponseWriter writer)
     {
         _configuration = configuration;
         _writer = writer;
     }
 
+    public string ActionName => RegionsActionName;
+
     public async Task HandleAsync(HttpContext context, IFormCollection form)
     {
-        var requestedRegionNames = form
-            .Where(parameter => parameter.Key.StartsWith(RegionNameParameterPrefix))
-            .Select(parameter => parameter.Value.ToString())
-            .ToList();
-
+        var requestedRegionNames = form.ReadValues(RegionNameParameterPrefix);
         var unsupportedRegionNames = requestedRegionNames
-            .Where(regionName => regionName != _configuration.RegionName)
+            .Where(regionName => regionName != _configuration.Region.Name)
             .ToList();
 
         if (unsupportedRegionNames.Count > 0)
         {
             var unsupportedRegionName = unsupportedRegionNames.First();
-            var message = $"The region '{unsupportedRegionName}' is not served by this emulator. The emulator serves {_configuration.RegionName}.";
+            var message = $"The region '{unsupportedRegionName}' is not served by this emulator. The emulator serves {_configuration.Region.Name}.";
             await _writer.WriteErrorAsync(context.Response, InvalidParameterValueCode, message);
             return;
         }
@@ -54,7 +54,7 @@ public class DescribeRegionsOperation
                 new XElement(xmlNamespace + RequestIdElementName, _writer.NextRequestId()),
                 new XElement(xmlNamespace + RegionInfoElementName,
                     new XElement(xmlNamespace + ItemElementName,
-                        new XElement(xmlNamespace + RegionNameElementName, _configuration.RegionName),
-                        new XElement(xmlNamespace + RegionEndpointElementName, _configuration.RegionEndpoint)))));
+                        new XElement(xmlNamespace + RegionNameElementName, _configuration.Region.Name),
+                        new XElement(xmlNamespace + RegionEndpointElementName, _configuration.Region.Endpoint)))));
     }
 }

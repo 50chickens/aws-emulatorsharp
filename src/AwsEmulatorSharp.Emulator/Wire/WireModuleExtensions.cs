@@ -11,7 +11,6 @@ public static class WireModuleExtensions
     {
         services.AddSingleton<IWireConfiguration, WireConfiguration>();
         services.AddSingleton<QueryResponseWriter>();
-        services.AddSingleton<DescribeRegionsOperation>();
         services.AddSingleton<WireSurface>();
 
         return services;

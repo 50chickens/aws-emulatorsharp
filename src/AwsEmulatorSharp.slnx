@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="../tests/AwsEmulatorSharp.Core.Tests/AwsEmulatorSharp.Core.Tests.csproj" />
+  <Project Path="../tests/AwsEmulatorSharp.Emulator.Tests/AwsEmulatorSharp.Emulator.Tests.csproj" />
   <Project Path="AwsEmulatorSharp.Core/AwsEmulatorSharp.Core.csproj" />
   <Project Path="AwsEmulatorSharp.Emulator/AwsEmulatorSharp.Emulator.csproj" />
   <Project Path="AwsEmulatorSharp.Host/AwsEmulatorSharp.Host.csproj" />

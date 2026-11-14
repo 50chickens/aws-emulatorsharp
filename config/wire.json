@@ -1,0 +1,11 @@
+{
+  "listenerPort": 5002,
+  "region": "us-east-1",
+  "credentials": {
+    "accessKeyId": "dummy-access-key",
+    "secretAccessKey": "dummy-secret-key"
+  },
+  "amiToImage": {
+    "ami-0123456789abcdef0": "mcr.microsoft.com/dotnet/framework/runtime:4.8.1-windowsservercore-ltsc2025"
+  }
+}

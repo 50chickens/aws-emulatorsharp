@@ -1,0 +1,14 @@
+namespace AwsEmulatorSharp.Emulator.Containers;
+
+public interface IContainerDaemon
+{
+    string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels);
+
+    bool IsRunning(string containerId);
+
+    ContainerCommandResult RunCommand(string containerId, IReadOnlyList<string> command);
+
+    IReadOnlyList<string> FindContainerIds(string labelKey, string labelValue);
+
+    void RemoveContainer(string containerId);
+}

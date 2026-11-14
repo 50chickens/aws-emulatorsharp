@@ -18,4 +18,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\config\ec2.json" Link="config\ec2.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -15,24 +15,23 @@ namespace AwsEmulatorSharp.Emulator.Tests;
 [TimedTestFixture]
 public class DependencyResolverTests
 {
-    private int _registeredCount;
+    private IServiceCollection _services;
     private ServiceProvider _provider;
 
     [SetUp]
     public void SetUp()
     {
-        var services = new ServiceCollection();
-        services.AddContainersModule();
-        services.AddWireModule();
-        services.AddAuthModule();
-        services.AddImagesModule();
-        services.AddEc2Module();
-        services.AddS3Module();
-        services.AddIdentityModule();
-        services.AddSecretsModule();
+        _services = new ServiceCollection();
+        _services.AddContainersModule();
+        _services.AddWireModule();
+        _services.AddAuthModule();
+        _services.AddImagesModule();
+        _services.AddEc2Module();
+        _services.AddS3Module();
+        _services.AddIdentityModule();
+        _services.AddSecretsModule();
 
-        _registeredCount = services.Count;
-        _provider = services.BuildServiceProvider();
+        _provider = _services.BuildServiceProvider();
     }
 
     [TearDown]
@@ -44,8 +43,10 @@ public class DependencyResolverTests
     [Test]
     public void That_Every_Registered_Service_Resolves()
     {
-        var actual = _provider.GetServices(typeof(object)).ToList();
+        var actual = _services
+            .Select(descriptor => _provider.GetServices(descriptor.ServiceType))
+            .ToList();
 
-        Assert.That(actual, Has.Count.EqualTo(_registeredCount));
+        Assert.That(actual, Has.Count.EqualTo(_services.Count));
     }
 }

@@ -5,15 +5,14 @@ namespace AwsEmulatorSharp.Emulator.Wire;
 public class WireSurface
 {
     private const string ActionFormName = "Action";
-    private const string DescribeRegionsActionName = "DescribeRegions";
     private const string InvalidActionCode = "InvalidAction";
 
-    private readonly DescribeRegionsOperation _describeRegionsOperation;
+    private readonly Dictionary<string, IQueryOperation> _operations;
     private readonly QueryResponseWriter _writer;
 
-    public WireSurface(DescribeRegionsOperation describeRegionsOperation, QueryResponseWriter writer)
+    public WireSurface(IEnumerable<IQueryOperation> operations, QueryResponseWriter writer)
     {
-        _describeRegionsOperation = describeRegionsOperation;
+        _operations = operations.ToDictionary(operation => operation.ActionName);
         _writer = writer;
     }
 
@@ -22,13 +21,13 @@ public class WireSurface
         var form = await context.Request.ReadFormAsync();
         var action = form[ActionFormName].ToString();
 
-        if (action != DescribeRegionsActionName)
+        if (!_operations.ContainsKey(action))
         {
             var message = $"The action '{action}' is not implemented by this emulator.";
             await _writer.WriteErrorAsync(context.Response, InvalidActionCode, message);
             return;
         }
 
-        await _describeRegionsOperation.HandleAsync(context, form);
+        await _operations[action].HandleAsync(context, form);
     }
 }

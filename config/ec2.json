@@ -1,5 +1,74 @@
 {
   "amiToImage": {
     "ami-0123456789abcdef0": "mcr.microsoft.com/dotnet/framework/runtime:4.8.1-windowsservercore-ltsc2025"
-  }
+  },
+  "region": {
+    "name": "us-east-1",
+    "endpoint": "ec2.us-east-1.amazonaws.com"
+  },
+  "availabilityZones": [
+    {
+      "name": "us-east-1a",
+      "state": "available",
+      "regionName": "us-east-1"
+    },
+    {
+      "name": "us-east-1b",
+      "state": "available",
+      "regionName": "us-east-1"
+    }
+  ],
+  "instanceTypes": [
+    {
+      "name": "t3.micro",
+      "vCpuCount": 2,
+      "memoryMib": 1024,
+      "currentGeneration": true,
+      "freeTierEligible": true
+    },
+    {
+      "name": "t3.medium",
+      "vCpuCount": 2,
+      "memoryMib": 4096,
+      "currentGeneration": true,
+      "freeTierEligible": false
+    }
+  ],
+  "keyPairs": [
+    {
+      "name": "emulator-key",
+      "fingerprint": "1f:2e:3d:4c:5b:6a:79:88:97:a6:b5:c4:d3:e2:f1:00:0f:1e:2d:3c",
+      "keyType": "rsa"
+    }
+  ],
+  "subnets": [
+    {
+      "subnetId": "subnet-0a1b2c3d4e5f60718",
+      "cidrBlock": "10.0.0.0/24",
+      "availabilityZone": "us-east-1a",
+      "vpcId": "vpc-0123456789abcdef0",
+      "defaultForAz": true
+    },
+    {
+      "subnetId": "subnet-0a1b2c3d4e5f60719",
+      "cidrBlock": "10.0.1.0/24",
+      "availabilityZone": "us-east-1b",
+      "vpcId": "vpc-0123456789abcdef0",
+      "defaultForAz": false
+    }
+  ],
+  "securityGroups": [
+    {
+      "groupId": "sg-0123456789abcdef0",
+      "groupName": "default",
+      "description": "default VPC security group",
+      "vpcId": "vpc-0123456789abcdef0"
+    },
+    {
+      "groupId": "sg-0123456789abcdef1",
+      "groupName": "windows-launch",
+      "description": "launch traffic for the emulated instance",
+      "vpcId": "vpc-0123456789abcdef0"
+    }
+  ]
 }

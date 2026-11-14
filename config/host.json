@@ -1,0 +1,8 @@
+{
+  "listenerPort": 5000,
+  "region": "us-east-1",
+  "credentials": {
+    "accessKeyId": "dummy-access-key",
+    "secretAccessKey": "dummy-secret-key"
+  }
+}

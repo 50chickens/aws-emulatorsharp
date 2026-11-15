@@ -54,7 +54,7 @@ public class IdentitySurfaceTests
             new AssumeRoleOperation(store, writer)
         };
 
-        _surface = new WireSurface(operations, new QueryResponseWriter(new WireConfiguration()));
+        _surface = new WireSurface(operations, new QueryResponseWriter(new WireConfiguration()), new RecordingLogger());
         _requestFactory = new IdentityRequestFactory();
     }
 

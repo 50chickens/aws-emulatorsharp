@@ -43,8 +43,12 @@ public class DependencyResolverTests
     [Test]
     public void That_Every_Registered_Service_Resolves()
     {
-        var actual = _services
-            .Select(descriptor => _provider.GetServices(descriptor.ServiceType))
+        var serviceTypes = _services
+            .Select(descriptor => descriptor.ServiceType.IsGenericTypeDefinition ? descriptor.ServiceType.MakeGenericType(typeof(WireSurface)) : descriptor.ServiceType)
+            .ToList();
+
+        var actual = serviceTypes
+            .Select(serviceType => _provider.GetServices(serviceType))
             .ToList();
 
         Assert.That(actual, Has.Count.EqualTo(_services.Count));

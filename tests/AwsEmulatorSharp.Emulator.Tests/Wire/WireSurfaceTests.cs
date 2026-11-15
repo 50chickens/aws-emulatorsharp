@@ -3,6 +3,7 @@ using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Wire;
 using FiftyChickens.Library.Testing;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests.Wire;
@@ -17,6 +18,7 @@ public class WireSurfaceTests
     private const string UnknownActionName = "DescribeInstances";
     private const int RequestIdLength = 32;
 
+    private RecordingLogger _logger;
     private WireSurface _surface;
     private DefaultHttpContext _context;
     private MemoryStream _responseBody;
@@ -27,7 +29,8 @@ public class WireSurfaceTests
         var writer = new QueryResponseWriter(new WireConfiguration());
         var operations = new List<IQueryOperation>();
 
-        _surface = new WireSurface(operations, writer);
+        _logger = new RecordingLogger();
+        _surface = new WireSurface(operations, writer, _logger);
         _responseBody = new MemoryStream();
         _context = new DefaultHttpContext();
         _context.Request.Method = HttpMethods.Post;
@@ -56,5 +59,18 @@ public class WireSurfaceTests
         Assert.That(errorCode, Is.EqualTo(InvalidActionCode));
         Assert.That(errorMessage, Does.Contain(UnknownActionName));
         Assert.That(errorRequestId.Length, Is.EqualTo(RequestIdLength));
+    }
+
+    [Test]
+    public async Task Test_That_We_Can_Log_The_Action_A_Request_Carries()
+    {
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(UnknownActionRequest));
+
+        await _surface.HandleAsync(_context);
+
+        var entry = _logger.Entries.Single();
+
+        Assert.That(entry.Level, Is.EqualTo(LogLevel.Information));
+        Assert.That(entry.Message, Does.Contain(UnknownActionName));
     }
 }

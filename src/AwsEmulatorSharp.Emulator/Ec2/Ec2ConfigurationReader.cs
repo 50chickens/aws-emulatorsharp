@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AwsEmulatorSharp.Emulator.Ec2;
 
@@ -9,7 +10,8 @@ public class Ec2ConfigurationReader
 
     private static readonly JsonSerializerOptions _serializerOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower) }
     };
 
     public Ec2Configuration Read()

@@ -50,6 +50,11 @@ public class DescribeInstanceStatusOperation : IQueryOperation
 
     private string StatusName(Ec2Instance instance)
     {
+        if (instance.UserDataFailed)
+        {
+            return NotOkStatusName;
+        }
+
         var isRunning = _containers.IsRunning(instance.ContainerId);
         var statusName = isRunning ? OkStatusName : NotOkStatusName;
 

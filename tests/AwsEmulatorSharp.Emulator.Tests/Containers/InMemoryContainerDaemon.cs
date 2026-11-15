@@ -31,6 +31,8 @@ internal class InMemoryContainerDaemon : IContainerDaemon
         LastRemovedContainerId = string.Empty;
         LastCommandContainerId = string.Empty;
         LastCommand = new List<string>();
+        LastEnvironmentContainerId = string.Empty;
+        LastEnvironment = new Dictionary<string, string>();
     }
 
     internal string LastStartedImageReference { get; private set; }
@@ -52,6 +54,10 @@ internal class InMemoryContainerDaemon : IContainerDaemon
     internal IReadOnlyList<string> Commands => _commands;
 
     internal IReadOnlyList<ContainerDaemonOperation> Journal => _journal;
+
+    internal string LastEnvironmentContainerId { get; private set; }
+
+    internal IReadOnlyDictionary<string, string> LastEnvironment { get; private set; }
 
     public string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels)
     {
@@ -105,6 +111,12 @@ internal class InMemoryContainerDaemon : IContainerDaemon
         _commands.Add(command.Last());
         _journal.Add(ContainerDaemonOperation.RunCommand);
         return commandResult;
+    }
+
+    public void SetEnvironment(string containerId, IReadOnlyDictionary<string, string> environment)
+    {
+        LastEnvironmentContainerId = containerId;
+        LastEnvironment = environment;
     }
 
     public IReadOnlyList<string> FindContainerIds(string labelKey, string labelValue)

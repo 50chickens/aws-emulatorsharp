@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace AwsEmulatorSharp.Emulator.S3;
 
-public class ObjectStore
+public class ObjectStore : IObjectStore
 {
     private const string AddressSeparator = "/";
 

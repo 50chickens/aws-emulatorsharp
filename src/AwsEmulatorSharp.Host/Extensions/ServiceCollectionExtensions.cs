@@ -4,6 +4,7 @@ using AwsEmulatorSharp.Emulator.Ec2;
 using AwsEmulatorSharp.Emulator.Host;
 using AwsEmulatorSharp.Emulator.Identity;
 using AwsEmulatorSharp.Emulator.Images;
+using AwsEmulatorSharp.Emulator.Install;
 using AwsEmulatorSharp.Emulator.S3;
 using AwsEmulatorSharp.Emulator.Secrets;
 using AwsEmulatorSharp.Emulator.Wire;
@@ -23,6 +24,7 @@ internal static class ServiceCollectionExtensions
         services.AddImagesModule();
         services.AddEc2Module();
         services.AddS3Module();
+        services.AddInstallModule();
         services.AddIdentityModule();
         services.AddSecretsModule();
 

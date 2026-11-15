@@ -1,4 +1,5 @@
 using AwsEmulatorSharp.Emulator.Ec2.Describe;
+using AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
 using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,9 @@ public static class Ec2ModuleExtensions
         services.AddSingleton<IQueryOperation, DescribeKeyPairsOperation>();
         services.AddSingleton<IQueryOperation, DescribeSubnetsOperation>();
         services.AddSingleton<IQueryOperation, DescribeSecurityGroupsOperation>();
+        services.AddSingleton<InstanceStore>();
+        services.AddSingleton<IQueryOperation, RunInstancesOperation>();
+        services.AddSingleton<IQueryOperation, DescribeInstancesOperation>();
 
         return services;
     }

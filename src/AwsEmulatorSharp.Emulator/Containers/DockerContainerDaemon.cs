@@ -22,6 +22,7 @@ public class DockerContainerDaemon : IContainerDaemon
     private const string ExecVerb = "exec";
     private const string StopVerb = "stop";
     private const string StartVerb = "start";
+    private const string RestartVerb = "restart";
     private const string RemoveVerb = "rm";
     private const string ForceFlag = "--force";
     private const string KeyValueSeparator = "=";
@@ -64,6 +65,13 @@ public class DockerContainerDaemon : IContainerDaemon
     public void StartExistingContainer(string containerId)
     {
         var arguments = new List<string> { StartVerb, containerId };
+        var result = RunDocker(arguments);
+        ThrowOnFailure(result);
+    }
+
+    public void RestartContainer(string containerId)
+    {
+        var arguments = new List<string> { RestartVerb, containerId };
         var result = RunDocker(arguments);
         ThrowOnFailure(result);
     }

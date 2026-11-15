@@ -8,6 +8,8 @@ public interface IContainerDaemon
 
     void StartExistingContainer(string containerId);
 
+    void RestartContainer(string containerId);
+
     bool IsRunning(string containerId);
 
     string GetAddress(string containerId);

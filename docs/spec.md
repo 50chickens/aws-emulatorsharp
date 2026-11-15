@@ -81,25 +81,32 @@ when the setup program exits with a non-zero exit code.
 `installer\report-server\install.ps1` runs the report server bundle with this switch string:
 
 ```
-PowerBIReportServer.exe /quiet /ACTION=INSTALL /INSTANCENAME=SSRS /EDITION=Developer /IAcceptLicenseTerms
+PowerBIReportServer.exe /quiet /Edition=DEV /IAcceptLicenseTerms=True
 ```
 
-The instance name is `SSRS` and the edition is `Developer`, the free edition. The script throws when
-the bundle exits with a non-zero exit code.
+The bundle installs the fixed instance `PBIRS` with the `DEV` edition, the free edition, so the
+switch string carries no instance name. The bundle rejects `/ACTION=INSTALL` and `/INSTANCENAME`:
+a command that carries either switch ends with a non-zero exit code. The script throws when the
+bundle exits with a non-zero exit code.
 
 ### 6.4 Report server configuration
 
 `installer\report-server\configure.ps1` reads the WMI configuration setting class
-`MSReportServer_ConfigurationSetting` from the namespace `wmiNamespace` names, then calls these
-methods in this order:
+`MSReportServer_ConfigurationSetting` from the namespace
+`root\Microsoft\SqlServer\ReportServer\RS_PBIRS\V15\Admin`, then calls these methods in this order:
 
-| Order | WMI method | Arguments | Purpose |
-| --- | --- | --- | --- |
-| 1 | `SetDatabaseConnection` | connection string | point the instance at the database engine |
-| 2 | `CreateDatabase` | connection string, application name | create the report server database |
-| 3 | `SetVirtualDirectory` | virtual directory | name the report server virtual directory |
-| 4 | `ReserveUrl` | application `ReportServerWeb`, URL | reserve the report server URL |
-| 5 | `ReserveUrl` | application `ReportManager`, URL | reserve the portal URL |
+| Order | WMI method | Purpose |
+| --- | --- | --- |
+| 1 | `GenerateDatabaseCreationScript` | generate the script that creates the report server database |
+| 2 | `SetDatabaseConnection` | point the instance at the database engine |
+| 3 | `SetVirtualDirectory` | name the report server virtual directory |
+| 4 | `InitializeReportServer` | initialize the instance with the configuration it now holds |
+| 5 | `ReserveURL` | reserve the URL the instance answers on |
+
+`SetDatabaseConnection` takes `CredentialsType` 1: `CredentialsType` 0 answers HRESULT `0x8004022C`.
+The applications are `ReportServerWebService` and `ReportServerWebApp`. `ReserveURL` takes the
+base URL `http://+:80`, so the instance answers on that one URL, and it runs after
+`SetVirtualDirectory`.
 
 Every method returns an HRESULT as its `ReturnValue`. The script throws when a call returns a
 non-zero HRESULT, so a call after a failed one never runs.
@@ -111,5 +118,12 @@ that holds two scripts holds one settings file that both read.
 
 | Settings file | Keys |
 | --- | --- |
-| `installer\sql-server\settings.json` | `mediaFolderPath`, `installerFileName` |
-| `installer\report-server\settings.json` | `mediaFolderPath`, `installerFileName`, `instanceName`, `edition`, `databaseServerName`, `databaseName`, `wmiNamespace`, `reportServerVirtualDirectory`, `reportServerUrl`, `portalUrl` |
+| `installer\sql-server\settings.json` | `mediaFolderPath`, `installerFileName`, `features` |
+| `installer\report-server\settings.json` | `mediaFolderPath`, `installerFileName`, `instanceName`, `edition`, `databaseServerName`, `databaseName`, `databaseCredentialsType`, `wmiNamespace`, `baseUrl`, `applications` |
+
+### 6.6 Installed instance check
+
+A configured instance answers HTTP 401 on `http://localhost/Reports` and on
+`http://localhost/ReportServer`, so that status proves the portal and the report server answer on
+the URLs `ReserveURL` reserved. `sqlcmd` needs `-C` to connect to the instance: the instance
+certificate is self-signed, and sqlcmd without `-C` fails the connection.

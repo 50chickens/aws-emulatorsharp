@@ -16,7 +16,7 @@ public class InstallPlanGeneratorTests
 {
     private const string MediaFileName = "sql-server-setup.exe";
     private const string OlderMediaFileName = "sql-server-setup-2025.exe";
-    private const string ReportingInstallerFileName = "SQLServerReportingServices.exe";
+    private const string ReportingInstallerFileName = "PowerBIReportServer.exe";
     private const string DatabaseEngineStepName = "database-engine";
     private const string ReportServerStepName = "report-server";
     private const string MediaContentText = "installer-media";
@@ -33,7 +33,8 @@ public class InstallPlanGeneratorTests
     private const string CredentialFormat = "{0}/{1}/{2}/s3/aws4_request";
     private const string PresignedUrlFormat = "{0}/{1}?X-Amz-Algorithm=AWS4-HMAC-SHA256";
     private const string EndpointFormat = "http://{0}:{1}/";
-    private const string ExpectedCommandLineFormat = "\"{0}\\{1}\" /Q /ACTION=Install /FEATURES=IS /IACCEPTSQLSERVERLICENSETERMS";
+    private const string ExpectedDatabaseEngineCommandLineFormat = "\"{0}\\{1}\" /Q /ACTION=Install /FEATURES=SQLENGINE,FULLTEXT,IS,Conn,SDK /IACCEPTSQLSERVERLICENSETERMS";
+    private const string ExpectedReportServerCommandLineFormat = "\"{0}\\{1}\" /quiet /ACTION=INSTALL /INSTANCENAME=SSRS /IAcceptLicenseTerms";
     private const string SignatureQueryName = "X-Amz-Signature=";
     private const string ExpectedSignature = "cc32958840dae4d681c3e35b12c157c5f44805ee22120cf5d272ef6c7abcd8ff";
     private const int StateCode = 16;
@@ -123,11 +124,11 @@ public class InstallPlanGeneratorTests
     }
 
     [Test]
-    public void Test_That_The_Database_Engine_Step_Carries_An_Unattended_Setup_Command_Line_With_The_Integration_Services_Feature()
+    public void Test_That_The_Database_Engine_Step_Carries_An_Unattended_Setup_Command_Line_With_The_Database_Engine_Feature_Set()
     {
         var plan = _generator.For(_instance);
         var databaseEngineStep = plan.Steps.Single(step => step.Name.Equals(DatabaseEngineStepName));
-        var expectedCommandLine = string.Format(CultureInfo.InvariantCulture, ExpectedCommandLineFormat, _configuration.MediaFolderPath, MediaFileName);
+        var expectedCommandLine = string.Format(CultureInfo.InvariantCulture, ExpectedDatabaseEngineCommandLineFormat, _configuration.MediaFolderPath, MediaFileName);
 
         Assert.That(databaseEngineStep.CommandLine, Is.EqualTo(expectedCommandLine));
     }
@@ -139,7 +140,16 @@ public class InstallPlanGeneratorTests
         var reportServerStep = plan.Steps.OfType<ReportServerInstallStep>().Single();
 
         Assert.That(reportServerStep.InstallerKey, Is.EqualTo(_reportingInstallerKey));
-        Assert.That(reportServerStep.CommandLine, Does.Contain(ReportingInstallerFileName));
+    }
+
+    [Test]
+    public void Test_That_The_Report_Server_Step_Carries_An_Unattended_Report_Server_Command_Line()
+    {
+        var plan = _generator.For(_instance);
+        var reportServerStep = plan.Steps.OfType<ReportServerInstallStep>().Single();
+        var expectedCommandLine = string.Format(CultureInfo.InvariantCulture, ExpectedReportServerCommandLineFormat, _configuration.MediaFolderPath, ReportingInstallerFileName);
+
+        Assert.That(reportServerStep.CommandLine, Is.EqualTo(expectedCommandLine));
     }
 
     [Test]

@@ -7,7 +7,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests.Wire;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class WireSurfaceTests
 {
     private const string FormContentType = "application/x-www-form-urlencoded";

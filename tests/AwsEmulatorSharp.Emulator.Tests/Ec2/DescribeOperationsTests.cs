@@ -9,7 +9,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests.Ec2;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class DescribeOperationsTests
 {
     private const string FormContentType = "application/x-www-form-urlencoded";

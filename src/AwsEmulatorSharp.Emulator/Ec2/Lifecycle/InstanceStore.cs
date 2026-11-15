@@ -15,6 +15,7 @@ public class InstanceStore
     private const int StoppedStateCode = 80;
     private const string TerminatedStateName = "terminated";
     private const int TerminatedStateCode = 48;
+    private const int FirstBootCount = 1;
 
     private readonly ConcurrentDictionary<string, Ec2Instance> _instances = new(StringComparer.Ordinal);
 
@@ -22,7 +23,7 @@ public class InstanceStore
     {
         var instanceId = InstanceIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
         var reservationId = ReservationIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
-        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, privateIpAddress, RunningStateName, RunningStateCode);
+        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, privateIpAddress, RunningStateName, RunningStateCode, FirstBootCount);
         _instances[instanceId] = instance;
 
         return instance;
@@ -38,7 +39,7 @@ public class InstanceStore
 
     public Ec2Instance Start(Ec2Instance instance)
     {
-        var runningInstance = instance.WithState(RunningStateName, RunningStateCode);
+        var runningInstance = instance.Booted(RunningStateName, RunningStateCode);
         _instances[instance.InstanceId] = runningInstance;
 
         return runningInstance;

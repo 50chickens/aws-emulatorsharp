@@ -43,7 +43,7 @@ public class ContainersSurface
         return commandResult;
     }
 
-    public void RunPowerShellScript(string containerId, string script)
+    public ContainerCommandResult RunPowerShellScript(string containerId, string script)
     {
         var command = new List<string>
         {
@@ -54,7 +54,8 @@ public class ContainersSurface
             CommandFlag,
             script
         };
-        _daemon.RunCommand(containerId, command);
+        var commandResult = _daemon.RunCommand(containerId, command);
+        return commandResult;
     }
 
     public string Address(string containerId)

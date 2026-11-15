@@ -23,10 +23,25 @@ public class InstanceStore
     {
         var instanceId = InstanceIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
         var reservationId = ReservationIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
-        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, privateIpAddress, RunningStateName, RunningStateCode, FirstBootCount);
+        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, privateIpAddress, RunningStateName, RunningStateCode, FirstBootCount, string.Empty);
         _instances[instanceId] = instance;
 
         return instance;
+    }
+
+    public Ec2Instance RecordConsoleOutput(Ec2Instance instance, string consoleOutput)
+    {
+        var recordedInstance = instance.WithConsoleOutput(consoleOutput);
+        _instances[instance.InstanceId] = recordedInstance;
+
+        return recordedInstance;
+    }
+
+    public string ReadConsoleOutput(string instanceId)
+    {
+        var consoleOutput = _instances.TryGetValue(instanceId, out var instance) ? instance.ConsoleOutput : string.Empty;
+
+        return consoleOutput;
     }
 
     public Ec2Instance Stop(Ec2Instance instance)

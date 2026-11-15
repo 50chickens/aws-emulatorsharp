@@ -34,7 +34,9 @@ public class InstallPlanGeneratorTests
     private const string PresignedUrlFormat = "{0}/{1}?X-Amz-Algorithm=AWS4-HMAC-SHA256";
     private const string EndpointFormat = "http://{0}:{1}/";
     private const string ExpectedDatabaseEngineCommandLineFormat = "\"{0}\\{1}\" /Q /ACTION=Install /FEATURES=SQLENGINE,FULLTEXT,IS,Conn,SDK /IACCEPTSQLSERVERLICENSETERMS";
-    private const string ExpectedReportServerCommandLineFormat = "\"{0}\\{1}\" /quiet /ACTION=INSTALL /INSTANCENAME=SSRS /IAcceptLicenseTerms";
+    private const string ExpectedReportServerCommandLineFormat = "\"{0}\\{1}\" /quiet /ACTION=INSTALL /INSTANCENAME=SSRS /EDITION=Developer /IAcceptLicenseTerms";
+    private const string ReportServerInstanceName = "SSRS";
+    private const string UrlFormat = "http://{0}{1}";
     private const string SignatureQueryName = "X-Amz-Signature=";
     private const string ExpectedSignature = "cc32958840dae4d681c3e35b12c157c5f44805ee22120cf5d272ef6c7abcd8ff";
     private const int StateCode = 16;
@@ -159,5 +161,32 @@ public class InstallPlanGeneratorTests
         var reportServerStep = plan.Steps.OfType<ReportServerInstallStep>().Single();
 
         Assert.That(reportServerStep.DatabaseName, Is.EqualTo(_configuration.ReportServerDatabaseName));
+    }
+
+    [Test]
+    public void Test_That_The_Report_Server_Step_Names_The_Instance_Whose_Database_It_Configures()
+    {
+        var plan = _generator.For(_instance);
+        var reportServerStep = plan.Steps.OfType<ReportServerInstallStep>().Single();
+
+        Assert.That(reportServerStep.InstanceName, Is.EqualTo(ReportServerInstanceName));
+    }
+
+    [Test]
+    public void Test_That_The_Plan_Names_The_Report_Server_Url_The_Running_Container_Answers_On()
+    {
+        var plan = _generator.For(_instance);
+        var expectedReportServerUrl = string.Format(CultureInfo.InvariantCulture, UrlFormat, _instance.PrivateIpAddress, _configuration.ReportServerUrlPath);
+
+        Assert.That(plan.ReportServerUrl, Is.EqualTo(expectedReportServerUrl));
+    }
+
+    [Test]
+    public void Test_That_The_Plan_Names_The_Portal_Url_The_Running_Container_Answers_On()
+    {
+        var plan = _generator.For(_instance);
+        var expectedPortalUrl = string.Format(CultureInfo.InvariantCulture, UrlFormat, _instance.PrivateIpAddress, _configuration.PortalUrlPath);
+
+        Assert.That(plan.PortalUrl, Is.EqualTo(expectedPortalUrl));
     }
 }

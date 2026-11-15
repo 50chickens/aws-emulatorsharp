@@ -9,4 +9,6 @@ public class IdentityConfiguration
     public required string CallerArn { get; set; }
 
     public required int SessionDurationSeconds { get; set; }
+
+    public required Dictionary<string, InstanceProfile> InstanceProfiles { get; set; }
 }

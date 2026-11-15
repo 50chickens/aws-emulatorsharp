@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Containers;
+using AwsEmulatorSharp.Emulator.Ec2.InstanceEnvironment;
 using AwsEmulatorSharp.Emulator.Ec2.UserData;
 using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.AspNetCore.Http;
@@ -52,6 +53,8 @@ public class RunInstancesOperation : IQueryOperation
         var labels = new Dictionary<string, string> { [AmiLabelKey] = imageId };
         var container = _containers.Start(imageReference, labels);
         var instance = _store.Launch(imageId, instanceType, container.ContainerId, container.Address);
+        var environment = instance.ToEnvironment(_configuration.Region.Name);
+        _containers.SetEnvironment(instance.ContainerId, environment);
 
         var encodedUserData = form[UserDataParameterName].ToString();
         if (encodedUserData.Length > 0)

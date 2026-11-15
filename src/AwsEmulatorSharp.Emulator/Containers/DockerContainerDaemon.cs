@@ -20,6 +20,8 @@ public class DockerContainerDaemon : IContainerDaemon
     private const string FilterFlag = "--filter=";
     private const string LabelFilterName = "label=";
     private const string ExecVerb = "exec";
+    private const string SetEnvironmentStatementFormat = "[Environment]::SetEnvironmentVariable('{0}','{1}','Machine')";
+    private const string StatementSeparator = ";";
     private const string StopVerb = "stop";
     private const string StartVerb = "start";
     private const string RestartVerb = "restart";
@@ -105,6 +107,18 @@ public class DockerContainerDaemon : IContainerDaemon
 
         var result = RunDocker(arguments);
         return result;
+    }
+
+    public void SetEnvironment(string containerId, IReadOnlyDictionary<string, string> environment)
+    {
+        var statements = environment
+            .Select(pair => string.Format(CultureInfo.InvariantCulture, SetEnvironmentStatementFormat, pair.Key, pair.Value))
+            .ToList();
+        var script = string.Join(StatementSeparator, statements);
+
+        var command = script.ToPowerShellCommand();
+        var result = RunCommand(containerId, command);
+        ThrowOnFailure(result);
     }
 
     public void RemoveContainer(string containerId)

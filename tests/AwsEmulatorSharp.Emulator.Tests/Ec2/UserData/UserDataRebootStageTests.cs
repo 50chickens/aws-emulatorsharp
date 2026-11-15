@@ -59,9 +59,9 @@ public class UserDataRebootStageTests
         var configuration = new Ec2ConfigurationReader().Read();
         var store = new InstanceStore();
         var writer = new QueryResponseWriter(new WireConfiguration());
-        _firstStageScript = string.Join(Environment.NewLine, FirstStageLine, RebootRequestLine);
+        _firstStageScript = string.Join(System.Environment.NewLine, FirstStageLine, RebootRequestLine);
         _secondStageScript = SecondStageLine;
-        var script = string.Join(Environment.NewLine, _firstStageScript, _secondStageScript);
+        var script = string.Join(System.Environment.NewLine, _firstStageScript, _secondStageScript);
         var commandResults = new List<ContainerCommandResult>
         {
             new ContainerCommandResult(FirstStageOutput, EmptyStandardError, StoppedSessionExitCode),

@@ -35,7 +35,7 @@ public class DescribeImagesTests
 
         _catalogue = configuration.AmiToImage;
         _imageId = _catalogue.Keys.First();
-        _surface = new WireSurface(operations, writer);
+        _surface = new WireSurface(operations, writer, new RecordingLogger());
         _responseBody = new MemoryStream();
         _context = new DefaultHttpContext();
         _context.Request.Method = HttpMethods.Post;

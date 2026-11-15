@@ -9,6 +9,7 @@ public static class WireModuleExtensions
 {
     public static IServiceCollection AddWireModule(this IServiceCollection services)
     {
+        services.AddLogging();
         services.AddSingleton<IWireConfiguration, WireConfiguration>();
         services.AddSingleton<QueryResponseWriter>();
         services.AddSingleton<WireSurface>();

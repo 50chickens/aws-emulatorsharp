@@ -1,1 +1,6 @@
-{}
+{
+  "accessKeyId": "dummy-access-key",
+  "accountId": "000000000000",
+  "callerArn": "arn:aws:iam::000000000000:user/emulator",
+  "sessionDurationSeconds": 3600
+}

@@ -22,6 +22,8 @@ public static class Ec2ModuleExtensions
         services.AddSingleton<InstanceStore>();
         services.AddSingleton<IQueryOperation, RunInstancesOperation>();
         services.AddSingleton<IQueryOperation, DescribeInstancesOperation>();
+        services.AddSingleton<IQueryOperation, StopInstancesOperation>();
+        services.AddSingleton<IQueryOperation, StartInstancesOperation>();
 
         return services;
     }

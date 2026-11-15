@@ -9,6 +9,7 @@ internal class InMemoryContainerDaemon : IContainerDaemon
 
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _labelsByContainerId = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _addressByContainerId = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _runningContainerIds = new(StringComparer.Ordinal);
     private readonly ContainerCommandResult _commandResult;
     private int _containerCount;
 
@@ -16,9 +17,15 @@ internal class InMemoryContainerDaemon : IContainerDaemon
     {
         _commandResult = commandResult;
         LastStartedImageReference = string.Empty;
+        LastStoppedContainerId = string.Empty;
+        LastStartedExistingContainerId = string.Empty;
     }
 
     internal string LastStartedImageReference { get; private set; }
+
+    internal string LastStoppedContainerId { get; private set; }
+
+    internal string LastStartedExistingContainerId { get; private set; }
 
     public string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels)
     {
@@ -27,14 +34,27 @@ internal class InMemoryContainerDaemon : IContainerDaemon
         var address = string.Format(CultureInfo.InvariantCulture, AddressFormat, _containerCount);
         _labelsByContainerId.Add(containerId, labels);
         _addressByContainerId.Add(containerId, address);
+        _runningContainerIds.Add(containerId);
         LastStartedImageReference = imageReference;
         return containerId;
     }
 
+    public void StopContainer(string containerId)
+    {
+        _runningContainerIds.Remove(containerId);
+        LastStoppedContainerId = containerId;
+    }
+
+    public void StartExistingContainer(string containerId)
+    {
+        _runningContainerIds.Add(containerId);
+        LastStartedExistingContainerId = containerId;
+    }
+
     public bool IsRunning(string containerId)
     {
-        var isPresent = _labelsByContainerId.ContainsKey(containerId);
-        return isPresent;
+        var isRunning = _runningContainerIds.Contains(containerId);
+        return isRunning;
     }
 
     public string GetAddress(string containerId)
@@ -61,5 +81,6 @@ internal class InMemoryContainerDaemon : IContainerDaemon
     {
         _labelsByContainerId.Remove(containerId);
         _addressByContainerId.Remove(containerId);
+        _runningContainerIds.Remove(containerId);
     }
 }

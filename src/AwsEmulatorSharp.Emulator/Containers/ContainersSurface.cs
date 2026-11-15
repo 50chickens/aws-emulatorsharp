@@ -62,6 +62,19 @@ public class ContainersSurface
         return containers;
     }
 
+    public IReadOnlyList<ContainerInstance> FindByLabel(string labelKey)
+    {
+        var containerIds = _daemon.FindContainerIds(labelKey);
+        var containers = containerIds.Select(ToContainerInstance).ToList();
+        return containers;
+    }
+
+    public IReadOnlyDictionary<string, string> Labels(string containerId)
+    {
+        var labels = _daemon.GetLabels(containerId);
+        return labels;
+    }
+
     public void Remove(string containerId)
     {
         _daemon.RemoveContainer(containerId);

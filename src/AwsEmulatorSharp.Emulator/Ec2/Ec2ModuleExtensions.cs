@@ -1,6 +1,7 @@
 using AwsEmulatorSharp.Emulator.Ec2.Describe;
 using AwsEmulatorSharp.Emulator.Ec2.InstanceEnvironment;
 using AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
+using AwsEmulatorSharp.Emulator.Ec2.Recovery;
 using AwsEmulatorSharp.Emulator.Ec2.UserData;
 using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +32,7 @@ public static class Ec2ModuleExtensions
         services.AddSingleton<IQueryOperation, RebootInstancesOperation>();
         services.AddSingleton<IQueryOperation, TerminateInstancesOperation>();
         services.AddSingleton<IQueryOperation, DescribeInstanceStatusOperation>();
+        services.AddHostedService<InstanceRecovery>();
 
         return services;
     }

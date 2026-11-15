@@ -17,4 +17,8 @@ public class Ec2Configuration
     public required List<Ec2Subnet> Subnets { get; set; }
 
     public required List<Ec2SecurityGroup> SecurityGroups { get; set; }
+
+    public string AmiLabelKey => "ami-id";
+
+    public string InstanceTypeLabelKey => "instance-type";
 }

@@ -76,4 +76,27 @@ public class ContainersSurfaceTests
 
         Assert.That(containers, Has.Count.EqualTo(0));
     }
+
+    [Test]
+    public void Test_That_We_Can_Find_A_Labelled_Container_By_Its_Label_Key_After_A_Restart()
+    {
+        var container = _surface.Start(ImageReference, _labels);
+        var restartedSurface = new ContainersSurface(_daemon);
+
+        var containers = restartedSurface.FindByLabel(LabelKey);
+
+        Assert.That(containers, Has.Count.EqualTo(1));
+        Assert.That(containers.Single().ContainerId, Is.EqualTo(container.ContainerId));
+    }
+
+    [Test]
+    public void Test_That_We_Can_Read_The_Labels_A_Container_Carries_After_A_Restart()
+    {
+        var container = _surface.Start(ImageReference, _labels);
+        var restartedSurface = new ContainersSurface(_daemon);
+
+        var labels = restartedSurface.Labels(container.ContainerId);
+
+        Assert.That(labels[LabelKey], Is.EqualTo(LabelValue));
+    }
 }

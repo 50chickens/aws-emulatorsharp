@@ -20,5 +20,9 @@ public interface IContainerDaemon
 
     IReadOnlyList<string> FindContainerIds(string labelKey, string labelValue);
 
+    IReadOnlyList<string> FindContainerIds(string labelKey);
+
+    IReadOnlyDictionary<string, string> GetLabels(string containerId);
+
     void RemoveContainer(string containerId);
 }

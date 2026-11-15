@@ -11,6 +11,8 @@ public class InstanceStore
     private const int IdentifierLength = 17;
     private const string RunningStateName = "running";
     private const int RunningStateCode = 16;
+    private const string StoppedStateName = "stopped";
+    private const int StoppedStateCode = 80;
 
     private readonly ConcurrentDictionary<string, Ec2Instance> _instances = new(StringComparer.Ordinal);
 
@@ -22,6 +24,22 @@ public class InstanceStore
         _instances[instanceId] = instance;
 
         return instance;
+    }
+
+    public Ec2Instance Stop(Ec2Instance instance)
+    {
+        var stoppedInstance = instance.WithState(StoppedStateName, StoppedStateCode);
+        _instances[instance.InstanceId] = stoppedInstance;
+
+        return stoppedInstance;
+    }
+
+    public Ec2Instance Start(Ec2Instance instance)
+    {
+        var runningInstance = instance.WithState(RunningStateName, RunningStateCode);
+        _instances[instance.InstanceId] = runningInstance;
+
+        return runningInstance;
     }
 
     public IReadOnlyList<Ec2Instance> Find(List<string> instanceIds)

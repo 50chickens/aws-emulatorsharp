@@ -22,6 +22,12 @@ public class ContainersSurface
         return commandResult;
     }
 
+    public string Address(string containerId)
+    {
+        var address = _daemon.GetAddress(containerId);
+        return address;
+    }
+
     public IReadOnlyList<ContainerInstance> FindByLabel(string labelKey, string labelValue)
     {
         var containerIds = _daemon.FindContainerIds(labelKey, labelValue);
@@ -38,6 +44,7 @@ public class ContainersSurface
     {
         var isRunning = _daemon.IsRunning(containerId);
         var state = isRunning ? ContainerState.Running : ContainerState.Stopped;
-        return new ContainerInstance(containerId, state);
+        var address = _daemon.GetAddress(containerId);
+        return new ContainerInstance(containerId, address, state);
     }
 }

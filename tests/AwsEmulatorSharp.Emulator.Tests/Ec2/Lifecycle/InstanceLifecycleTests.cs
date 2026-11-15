@@ -1,5 +1,6 @@
 using System.Text;
 using System.Xml.Linq;
+using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Ec2;
 using AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
 using AwsEmulatorSharp.Emulator.Wire;
@@ -15,16 +16,20 @@ public class InstanceLifecycleTests
     private const string FormContentType = "application/x-www-form-urlencoded";
     private const string DescribeInstancesRequest = "Action=DescribeInstances";
     private const string InstanceIdPrefix = "i-";
-    private const string StateCodePending = "0";
-    private const string StateNamePending = "pending";
+    private const string StateCodeRunning = "16";
+    private const string StateNameRunning = "running";
+    private const string FirstContainerAddress = "10.0.0.1";
     private const string UnknownImageId = "ami-00000000000000000";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
     private const int LaunchedInstanceCount = 1;
+    private const int EmptyContainerCount = 0;
 
     private WireSurface _surface;
     private DefaultHttpContext _context;
     private MemoryStream _responseBody;
+    private InMemoryContainerDaemon _daemon;
     private string _imageId;
+    private string _imageReference;
     private string _instanceType;
 
     [SetUp]
@@ -33,13 +38,17 @@ public class InstanceLifecycleTests
         var configuration = new Ec2ConfigurationReader().Read();
         var store = new InstanceStore();
         var writer = new QueryResponseWriter(new WireConfiguration());
+        var commandResult = new ContainerCommandResult(string.Empty, string.Empty, EmptyContainerCount);
+        _daemon = new InMemoryContainerDaemon(commandResult);
+        var containers = new ContainersSurface(_daemon);
         var operations = new List<IQueryOperation>
         {
-            new RunInstancesOperation(configuration, store, writer),
-            new DescribeInstancesOperation(store, writer)
+            new RunInstancesOperation(configuration, store, containers, writer),
+            new DescribeInstancesOperation(store, containers, writer)
         };
 
         _imageId = configuration.AmiToImage.Keys.First();
+        _imageReference = configuration.AmiToImage[_imageId];
         _instanceType = configuration.InstanceTypes.First().Name;
         _surface = new WireSurface(operations, writer, new RecordingLogger());
         _responseBody = new MemoryStream();
@@ -50,7 +59,7 @@ public class InstanceLifecycleTests
     }
 
     [Test]
-    public async Task Test_That_We_Can_Mint_A_Pending_Instance_From_A_Launch()
+    public async Task Test_That_We_Can_Run_An_Instance_From_The_Image_The_Ami_Names()
     {
         var request = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
         _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request));
@@ -68,6 +77,7 @@ public class InstanceLifecycleTests
         var instanceType = document.Descendants().Single(element => element.Name.LocalName == "instanceType").Value;
         var stateCode = document.Descendants().Single(element => element.Name.LocalName == "code").Value;
         var stateName = document.Descendants().Single(element => element.Name.LocalName == "name").Value;
+        var privateIpAddress = document.Descendants().Single(element => element.Name.LocalName == "privateIpAddress").Value;
 
         Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
         Assert.That(rootName, Is.EqualTo("RunInstancesResponse"));
@@ -75,12 +85,14 @@ public class InstanceLifecycleTests
         Assert.That(instanceIds.Single().StartsWith(InstanceIdPrefix), Is.True);
         Assert.That(imageId, Is.EqualTo(_imageId));
         Assert.That(instanceType, Is.EqualTo(_instanceType));
-        Assert.That(stateCode, Is.EqualTo(StateCodePending));
-        Assert.That(stateName, Is.EqualTo(StateNamePending));
+        Assert.That(stateCode, Is.EqualTo(StateCodeRunning));
+        Assert.That(stateName, Is.EqualTo(StateNameRunning));
+        Assert.That(privateIpAddress, Is.EqualTo(FirstContainerAddress));
+        Assert.That(_daemon.LastStartedImageReference, Is.EqualTo(_imageReference));
     }
 
     [Test]
-    public async Task Test_That_We_Can_Describe_The_Instance_A_Launch_Recorded()
+    public async Task Test_That_We_Can_Describe_The_Running_Instance_A_Launch_Recorded()
     {
         var launchRequest = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
         _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(launchRequest));
@@ -109,6 +121,7 @@ public class InstanceLifecycleTests
         var imageId = document.Descendants().Single(element => element.Name.LocalName == "imageId").Value;
         var instanceType = document.Descendants().Single(element => element.Name.LocalName == "instanceType").Value;
         var stateName = document.Descendants().Single(element => element.Name.LocalName == "name").Value;
+        var privateIpAddress = document.Descendants().Single(element => element.Name.LocalName == "privateIpAddress").Value;
 
         Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
         Assert.That(rootName, Is.EqualTo("DescribeInstancesResponse"));
@@ -116,7 +129,8 @@ public class InstanceLifecycleTests
         Assert.That(instanceId, Is.EqualTo(launchedInstanceId));
         Assert.That(imageId, Is.EqualTo(_imageId));
         Assert.That(instanceType, Is.EqualTo(_instanceType));
-        Assert.That(stateName, Is.EqualTo(StateNamePending));
+        Assert.That(stateName, Is.EqualTo(StateNameRunning));
+        Assert.That(privateIpAddress, Is.EqualTo(FirstContainerAddress));
     }
 
     [Test]
@@ -135,5 +149,6 @@ public class InstanceLifecycleTests
         Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
         Assert.That(errorCode, Is.EqualTo(InvalidImageIdNotFoundCode));
         Assert.That(errorMessage, Does.Contain(UnknownImageId));
+        Assert.That(_daemon.LastStartedImageReference, Is.EqualTo(string.Empty));
     }
 }

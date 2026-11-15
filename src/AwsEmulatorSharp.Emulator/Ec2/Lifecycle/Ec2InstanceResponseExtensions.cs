@@ -11,8 +11,9 @@ internal static class Ec2InstanceResponseExtensions
     private const string StateCodeElementName = "code";
     private const string StateNameElementName = "name";
     private const string InstanceTypeElementName = "instanceType";
+    private const string PrivateIpAddressElementName = "privateIpAddress";
 
-    internal static XElement ToInstanceItem(this Ec2Instance instance, XNamespace xmlNamespace)
+    internal static XElement ToInstanceItem(this Ec2Instance instance, XNamespace xmlNamespace, string privateIpAddress)
     {
         return new XElement(xmlNamespace + ItemElementName,
             new XElement(xmlNamespace + InstanceIdElementName, instance.InstanceId),
@@ -20,6 +21,7 @@ internal static class Ec2InstanceResponseExtensions
             new XElement(xmlNamespace + InstanceStateElementName,
                 new XElement(xmlNamespace + StateCodeElementName, instance.StateCode),
                 new XElement(xmlNamespace + StateNameElementName, instance.StateName)),
-            new XElement(xmlNamespace + InstanceTypeElementName, instance.InstanceType));
+            new XElement(xmlNamespace + InstanceTypeElementName, instance.InstanceType),
+            new XElement(xmlNamespace + PrivateIpAddressElementName, privateIpAddress));
     }
 }

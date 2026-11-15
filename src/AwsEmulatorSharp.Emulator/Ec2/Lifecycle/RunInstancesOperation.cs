@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Xml.Linq;
+using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.AspNetCore.Http;
 
@@ -10,6 +11,7 @@ public class RunInstancesOperation : IQueryOperation
     private const string RunInstancesActionName = "RunInstances";
     private const string ImageIdParameterName = "ImageId";
     private const string InstanceTypeParameterName = "InstanceType";
+    private const string AmiLabelKey = "ami-id";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
     private const string ImageNotFoundMessageFormat = "The image id '[{0}]' does not exist";
     private const string ResponseRootElementName = "RunInstancesResponse";
@@ -19,12 +21,14 @@ public class RunInstancesOperation : IQueryOperation
 
     private readonly Ec2Configuration _configuration;
     private readonly InstanceStore _store;
+    private readonly ContainersSurface _containers;
     private readonly QueryResponseWriter _writer;
 
-    public RunInstancesOperation(Ec2Configuration configuration, InstanceStore store, QueryResponseWriter writer)
+    public RunInstancesOperation(Ec2Configuration configuration, InstanceStore store, ContainersSurface containers, QueryResponseWriter writer)
     {
         _configuration = configuration;
         _store = store;
+        _containers = containers;
         _writer = writer;
     }
 
@@ -40,13 +44,16 @@ public class RunInstancesOperation : IQueryOperation
             return;
         }
 
+        var imageReference = _configuration.AmiToImage[imageId];
         var instanceType = form[InstanceTypeParameterName].ToString();
-        var instance = _store.Launch(imageId, instanceType);
+        var labels = new Dictionary<string, string> { [AmiLabelKey] = imageId };
+        var container = _containers.Start(imageReference, labels);
+        var instance = _store.Launch(imageId, instanceType, container.ContainerId);
 
-        await _writer.WriteAsync(context.Response, BuildDocument(instance));
+        await _writer.WriteAsync(context.Response, BuildDocument(instance, container.Address));
     }
 
-    private XDocument BuildDocument(Ec2Instance instance)
+    private XDocument BuildDocument(Ec2Instance instance, string privateIpAddress)
     {
         var xmlNamespace = _writer.XmlNamespace;
 
@@ -55,6 +62,6 @@ public class RunInstancesOperation : IQueryOperation
                 new XElement(xmlNamespace + RequestIdElementName, _writer.NextRequestId()),
                 new XElement(xmlNamespace + ReservationIdElementName, instance.ReservationId),
                 new XElement(xmlNamespace + InstancesSetElementName,
-                    instance.ToInstanceItem(xmlNamespace))));
+                    instance.ToInstanceItem(xmlNamespace, privateIpAddress))));
     }
 }

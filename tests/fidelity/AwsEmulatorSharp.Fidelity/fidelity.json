@@ -1,0 +1,9 @@
+{
+  "requiredCheckNames": [
+    "ec2-run-instances",
+    "ec2-describe-instances",
+    "ec2-describe-instance-status",
+    "ec2-get-console-output",
+    "ec2-terminate-instances"
+  ]
+}

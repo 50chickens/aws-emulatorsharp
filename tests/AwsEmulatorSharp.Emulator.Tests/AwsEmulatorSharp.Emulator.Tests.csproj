@@ -20,6 +20,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AwsEmulatorSharp.Emulator\AwsEmulatorSharp.Emulator.csproj" />
+    <ProjectReference Include="..\fidelity\AwsEmulatorSharp.Fidelity\AwsEmulatorSharp.Fidelity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Fidelity\Reports\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

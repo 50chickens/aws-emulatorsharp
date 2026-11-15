@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Coop.Library.Squawk" Version="1.0.20261115.160656" />
     <PackageReference Include="FiftyChickens.Library.Testing" Version="1.0.8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageReference Include="NUnit" Version="5.0.0" />

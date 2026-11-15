@@ -2,7 +2,7 @@ namespace AwsEmulatorSharp.Emulator.Containers;
 
 public interface IContainerDaemon
 {
-    string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels);
+    string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels, IReadOnlyList<int> publishedPorts);
 
     void SetEnvironment(string containerId, IReadOnlyDictionary<string, string> environment);
 

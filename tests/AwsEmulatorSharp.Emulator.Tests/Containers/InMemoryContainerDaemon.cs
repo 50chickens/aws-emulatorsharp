@@ -33,6 +33,7 @@ internal class InMemoryContainerDaemon : IContainerDaemon
         LastCommand = new List<string>();
         LastEnvironmentContainerId = string.Empty;
         LastEnvironment = new Dictionary<string, string>();
+        LastPublishedPorts = new List<int>();
     }
 
     internal string LastStartedImageReference { get; private set; }
@@ -59,7 +60,9 @@ internal class InMemoryContainerDaemon : IContainerDaemon
 
     internal IReadOnlyDictionary<string, string> LastEnvironment { get; private set; }
 
-    public string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels)
+    internal IReadOnlyList<int> LastPublishedPorts { get; private set; }
+
+    public string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels, IReadOnlyList<int> publishedPorts)
     {
         _containerCount++;
         var containerId = $"container-{_containerCount}";
@@ -68,6 +71,7 @@ internal class InMemoryContainerDaemon : IContainerDaemon
         _addressByContainerId.Add(containerId, address);
         _runningContainerIds.Add(containerId);
         LastStartedImageReference = imageReference;
+        LastPublishedPorts = publishedPorts;
         return containerId;
     }
 

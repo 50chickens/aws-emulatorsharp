@@ -54,7 +54,7 @@ public class UserDataLaunchTests
         _imageId = configuration.AmiToImage.Keys.First();
         _instanceType = configuration.InstanceTypes.First().Name;
         _script = string.Join(
-            Environment.NewLine,
+            System.Environment.NewLine,
             CommentLine,
             string.Format(CultureInfo.InvariantCulture, SetContentCommandFormat, UserDataFileName, UserDataProofValue));
         _surface = new WireSurface(operations, writer, new RecordingLogger());

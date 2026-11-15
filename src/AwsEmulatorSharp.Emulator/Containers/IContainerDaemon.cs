@@ -4,6 +4,8 @@ public interface IContainerDaemon
 {
     string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels);
 
+    void SetEnvironment(string containerId, IReadOnlyDictionary<string, string> environment);
+
     void StopContainer(string containerId);
 
     void StartExistingContainer(string containerId);

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Containers;
+using AwsEmulatorSharp.Emulator.Ec2.UserData;
 using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.AspNetCore.Http;
 
@@ -11,6 +12,7 @@ public class RunInstancesOperation : IQueryOperation
     private const string RunInstancesActionName = "RunInstances";
     private const string ImageIdParameterName = "ImageId";
     private const string InstanceTypeParameterName = "InstanceType";
+    private const string UserDataParameterName = "UserData";
     private const string AmiLabelKey = "ami-id";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
     private const string ImageNotFoundMessageFormat = "The image id '[{0}]' does not exist";
@@ -49,6 +51,13 @@ public class RunInstancesOperation : IQueryOperation
         var labels = new Dictionary<string, string> { [AmiLabelKey] = imageId };
         var container = _containers.Start(imageReference, labels);
         var instance = _store.Launch(imageId, instanceType, container.ContainerId, container.Address);
+
+        var encodedUserData = form[UserDataParameterName].ToString();
+        if (encodedUserData.Length > 0)
+        {
+            var script = encodedUserData.DecodeUserData();
+            _containers.RunPowerShellScript(instance.ContainerId, script);
+        }
 
         await _writer.WriteAsync(context.Response, BuildDocument(instance));
     }

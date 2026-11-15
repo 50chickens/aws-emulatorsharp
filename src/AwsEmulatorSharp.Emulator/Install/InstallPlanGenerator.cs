@@ -14,7 +14,8 @@ public class InstallPlanGenerator
     private const string DatabaseEngineStepName = "database-engine";
     private const string ReportServerStepName = "report-server";
     private const string DatabaseEngineCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=Install /FEATURES={3} /IACCEPTSQLSERVERLICENSETERMS";
-    private const string ReportServerCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=INSTALL /INSTANCENAME={3} /IAcceptLicenseTerms";
+    private const string ReportServerCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=INSTALL /INSTANCENAME={3} /EDITION={4} /IAcceptLicenseTerms";
+    private const string UrlFormat = "http://{0}{1}";
 
     private readonly IObjectStore _objectStore;
     private readonly MediaUrlMinter _mediaUrlMinter;
@@ -30,8 +31,10 @@ public class InstallPlanGenerator
     public InstallPlan For(Ec2Instance instance)
     {
         var steps = new List<InstallStep> { ToDatabaseEngineStep(), ToReportServerStep() };
+        var reportServerUrl = ToUrl(instance, _configuration.ReportServerUrlPath);
+        var portalUrl = ToUrl(instance, _configuration.PortalUrlPath);
 
-        return new InstallPlan(instance.InstanceId, _configuration.MediaBucketName, steps);
+        return new InstallPlan(instance.InstanceId, _configuration.MediaBucketName, steps, reportServerUrl, portalUrl);
     }
 
     private InstallStep ToDatabaseEngineStep()
@@ -49,9 +52,16 @@ public class InstallPlanGenerator
         var installerKey = FindInstallerKey(_configuration.ReportingMediaKeyPrefix);
         var installerFileName = installerKey.Split(ObjectKeySeparator).Last();
         var installerUrl = _mediaUrlMinter.For(_configuration.MediaBucketName, installerKey);
-        var commandLine = string.Format(CultureInfo.InvariantCulture, ReportServerCommandLineFormat, _configuration.MediaFolderPath, installerFileName, ReportServerQuietSwitch, ReportServerInstanceName);
+        var commandLine = string.Format(CultureInfo.InvariantCulture, ReportServerCommandLineFormat, _configuration.MediaFolderPath, installerFileName, ReportServerQuietSwitch, ReportServerInstanceName, _configuration.ReportServerEdition);
 
-        return new ReportServerInstallStep(ReportServerStepName, installerKey, installerUrl, commandLine, _configuration.ReportServerDatabaseName);
+        return new ReportServerInstallStep(ReportServerStepName, installerKey, installerUrl, commandLine, ReportServerInstanceName, _configuration.ReportServerDatabaseName);
+    }
+
+    private string ToUrl(Ec2Instance instance, string path)
+    {
+        var url = string.Format(CultureInfo.InvariantCulture, UrlFormat, instance.PrivateIpAddress, path);
+
+        return url;
     }
 
     private string FindInstallerKey(string mediaKeyPrefix)

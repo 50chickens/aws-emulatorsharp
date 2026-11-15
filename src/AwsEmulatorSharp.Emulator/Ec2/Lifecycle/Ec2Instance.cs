@@ -2,7 +2,7 @@ namespace AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
 
 public class Ec2Instance
 {
-    public Ec2Instance(string instanceId, string reservationId, string imageId, string instanceType, string containerId, string privateIpAddress, string stateName, int stateCode, int bootCount)
+    public Ec2Instance(string instanceId, string reservationId, string imageId, string instanceType, string containerId, string privateIpAddress, string stateName, int stateCode, int bootCount, string consoleOutput)
     {
         InstanceId = instanceId;
         ReservationId = reservationId;
@@ -13,6 +13,7 @@ public class Ec2Instance
         StateName = stateName;
         StateCode = stateCode;
         BootCount = bootCount;
+        ConsoleOutput = consoleOutput;
     }
 
     public string InstanceId { get; }
@@ -33,13 +34,20 @@ public class Ec2Instance
 
     public int BootCount { get; }
 
+    public string ConsoleOutput { get; }
+
     public Ec2Instance WithState(string stateName, int stateCode)
     {
-        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount);
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount, ConsoleOutput);
     }
 
     public Ec2Instance Booted(string stateName, int stateCode)
     {
-        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount + 1);
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount + 1, ConsoleOutput);
+    }
+
+    public Ec2Instance WithConsoleOutput(string consoleOutput)
+    {
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, StateName, StateCode, BootCount, consoleOutput);
     }
 }

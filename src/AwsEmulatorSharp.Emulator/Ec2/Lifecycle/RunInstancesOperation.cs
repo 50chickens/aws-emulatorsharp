@@ -56,7 +56,8 @@ public class RunInstancesOperation : IQueryOperation
         if (encodedUserData.Length > 0)
         {
             var script = encodedUserData.DecodeUserData();
-            _containers.RunPowerShellScript(instance.ContainerId, script);
+            var commandResult = _containers.RunPowerShellScript(instance.ContainerId, script);
+            _store.RecordConsoleOutput(instance, commandResult.StandardOutput);
         }
 
         await _writer.WriteAsync(context.Response, BuildDocument(instance));

@@ -2,6 +2,12 @@ namespace AwsEmulatorSharp.Emulator.Containers;
 
 public class ContainersSurface
 {
+    private const string PowerShellExecutable = "powershell.exe";
+    private const string NoProfileFlag = "-NoProfile";
+    private const string ExecutionPolicyFlag = "-ExecutionPolicy";
+    private const string BypassExecutionPolicy = "Bypass";
+    private const string CommandFlag = "-Command";
+
     private readonly IContainerDaemon _daemon;
 
     public ContainersSurface(IContainerDaemon daemon)
@@ -35,6 +41,20 @@ public class ContainersSurface
     {
         var commandResult = _daemon.RunCommand(containerId, command);
         return commandResult;
+    }
+
+    public void RunPowerShellScript(string containerId, string script)
+    {
+        var command = new List<string>
+        {
+            PowerShellExecutable,
+            NoProfileFlag,
+            ExecutionPolicyFlag,
+            BypassExecutionPolicy,
+            CommandFlag,
+            script
+        };
+        _daemon.RunCommand(containerId, command);
     }
 
     public string Address(string containerId)

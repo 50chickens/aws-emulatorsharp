@@ -3,8 +3,11 @@ using System.Text;
 using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Ec2;
+using AwsEmulatorSharp.Emulator.Ec2.InstanceEnvironment;
 using AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
 using AwsEmulatorSharp.Emulator.Ec2.UserData;
+using AwsEmulatorSharp.Emulator.Host;
+using AwsEmulatorSharp.Emulator.Identity;
 using AwsEmulatorSharp.Emulator.Wire;
 using FiftyChickens.Library.Testing;
 using Microsoft.AspNetCore.Http;
@@ -44,9 +47,10 @@ public class GetConsoleOutputTests
         var commandResult = new ContainerCommandResult(StandardOutput, StandardError, SuccessfulExitCode);
         var daemon = new InMemoryContainerDaemon(commandResult);
         var containers = new ContainersSurface(daemon);
+        var environment = new Ec2InstanceEnvironment(new IdentityConfigurationReader().Read(), new HostConfigurationReader().Read());
         var operations = new List<IQueryOperation>
         {
-            new RunInstancesOperation(configuration, store, containers, writer),
+            new RunInstancesOperation(configuration, store, containers, environment, writer),
             new GetConsoleOutputOperation(store, writer)
         };
 

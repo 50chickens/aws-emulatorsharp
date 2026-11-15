@@ -1,6 +1,7 @@
 using AwsEmulatorSharp.Emulator.Auth;
 using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Ec2;
+using AwsEmulatorSharp.Emulator.Host;
 using AwsEmulatorSharp.Emulator.Identity;
 using AwsEmulatorSharp.Emulator.Images;
 using AwsEmulatorSharp.Emulator.S3;
@@ -15,6 +16,7 @@ internal static class ServiceCollectionExtensions
     internal static IServiceCollection AddEmulatorModules(this IServiceCollection services)
     {
         services.AddSquawk();
+        services.AddHostModule();
         services.AddContainersModule();
         services.AddWireModule();
         services.AddAuthModule();

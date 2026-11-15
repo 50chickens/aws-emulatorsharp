@@ -13,6 +13,7 @@ public class RunInstancesOperation : IQueryOperation
     private const string RunInstancesActionName = "RunInstances";
     private const string ImageIdParameterName = "ImageId";
     private const string InstanceTypeParameterName = "InstanceType";
+    private const string InstanceProfileNameParameterName = "IamInstanceProfile.Name";
     private const string UserDataParameterName = "UserData";
     private const string AmiLabelKey = "ami-id";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
@@ -26,13 +27,15 @@ public class RunInstancesOperation : IQueryOperation
     private readonly Ec2Configuration _configuration;
     private readonly InstanceStore _store;
     private readonly ContainersSurface _containers;
+    private readonly Ec2InstanceEnvironment _environment;
     private readonly QueryResponseWriter _writer;
 
-    public RunInstancesOperation(Ec2Configuration configuration, InstanceStore store, ContainersSurface containers, QueryResponseWriter writer)
+    public RunInstancesOperation(Ec2Configuration configuration, InstanceStore store, ContainersSurface containers, Ec2InstanceEnvironment environment, QueryResponseWriter writer)
     {
         _configuration = configuration;
         _store = store;
         _containers = containers;
+        _environment = environment;
         _writer = writer;
     }
 
@@ -53,7 +56,8 @@ public class RunInstancesOperation : IQueryOperation
         var labels = new Dictionary<string, string> { [AmiLabelKey] = imageId };
         var container = _containers.Start(imageReference, labels);
         var instance = _store.Launch(imageId, instanceType, container.ContainerId, container.Address);
-        var environment = instance.ToEnvironment(_configuration.Region.Name);
+        var instanceProfileName = form[InstanceProfileNameParameterName].ToString();
+        var environment = _environment.For(instance, _configuration.Region.Name, instanceProfileName);
         _containers.SetEnvironment(instance.ContainerId, environment);
 
         var encodedUserData = form[UserDataParameterName].ToString();

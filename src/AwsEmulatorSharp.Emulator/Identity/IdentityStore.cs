@@ -51,14 +51,18 @@ public class IdentityStore
 
     private IReadOnlyList<IdentityCaller> FindConfiguredCaller(string accessKey)
     {
-        if (accessKey != _configuration.AccessKeyId)
+        var callers = new List<IdentityCaller>();
+        if (accessKey == _configuration.AccessKeyId)
         {
-            var absentCallers = new List<IdentityCaller>();
-
-            return absentCallers;
+            callers.Add(new IdentityCaller(_configuration.AccountId, _configuration.CallerArn));
         }
 
-        var callers = new List<IdentityCaller> { new IdentityCaller(_configuration.AccountId, _configuration.CallerArn) };
+        var profileCallers = _configuration.InstanceProfiles
+            .Values
+            .Where(profile => profile.AccessKeyId == accessKey)
+            .Select(profile => new IdentityCaller(_configuration.AccountId, profile.Arn))
+            .ToList();
+        callers.AddRange(profileCallers);
 
         return callers;
     }

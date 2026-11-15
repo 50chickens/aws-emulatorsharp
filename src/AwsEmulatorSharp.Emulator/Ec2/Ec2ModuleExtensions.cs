@@ -1,4 +1,5 @@
 using AwsEmulatorSharp.Emulator.Ec2.Describe;
+using AwsEmulatorSharp.Emulator.Ec2.InstanceEnvironment;
 using AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
 using AwsEmulatorSharp.Emulator.Ec2.UserData;
 using AwsEmulatorSharp.Emulator.Wire;
@@ -21,6 +22,7 @@ public static class Ec2ModuleExtensions
         services.AddSingleton<IQueryOperation, DescribeSubnetsOperation>();
         services.AddSingleton<IQueryOperation, DescribeSecurityGroupsOperation>();
         services.AddSingleton<InstanceStore>();
+        services.AddSingleton<Ec2InstanceEnvironment>();
         services.AddSingleton<IQueryOperation, RunInstancesOperation>();
         services.AddSingleton<IQueryOperation, GetConsoleOutputOperation>();
         services.AddSingleton<IQueryOperation, DescribeInstancesOperation>();

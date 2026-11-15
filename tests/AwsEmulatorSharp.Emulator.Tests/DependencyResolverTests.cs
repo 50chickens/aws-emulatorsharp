@@ -1,6 +1,7 @@
 using AwsEmulatorSharp.Emulator.Auth;
 using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Ec2;
+using AwsEmulatorSharp.Emulator.Host;
 using AwsEmulatorSharp.Emulator.Identity;
 using AwsEmulatorSharp.Emulator.Images;
 using AwsEmulatorSharp.Emulator.S3;
@@ -22,6 +23,7 @@ public class DependencyResolverTests
     public void SetUp()
     {
         _services = new ServiceCollection();
+        _services.AddHostModule();
         _services.AddContainersModule();
         _services.AddWireModule();
         _services.AddAuthModule();

@@ -2,5 +2,12 @@
   "accessKeyId": "dummy-access-key",
   "accountId": "000000000000",
   "callerArn": "arn:aws:iam::000000000000:user/emulator",
-  "sessionDurationSeconds": 3600
+  "sessionDurationSeconds": 3600,
+  "instanceProfiles": {
+    "emulator-instance-profile": {
+      "arn": "arn:aws:iam::000000000000:instance-profile/emulator-instance-profile",
+      "accessKeyId": "profile-access-key",
+      "secretAccessKey": "profile-secret-key"
+    }
+  }
 }

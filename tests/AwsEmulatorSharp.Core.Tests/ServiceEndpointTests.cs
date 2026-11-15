@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Core.Tests;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class ServiceEndpointTests
 {
     private ServiceEndpoint _endpoint;

@@ -26,6 +26,11 @@ public class ContainersSurface
         _daemon.StartExistingContainer(containerId);
     }
 
+    public void Restart(string containerId)
+    {
+        _daemon.RestartContainer(containerId);
+    }
+
     public ContainerCommandResult RunCommand(string containerId, IReadOnlyList<string> command)
     {
         var commandResult = _daemon.RunCommand(containerId, command);

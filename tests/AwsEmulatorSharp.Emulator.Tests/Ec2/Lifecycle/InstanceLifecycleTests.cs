@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Containers;
@@ -18,10 +19,12 @@ public class InstanceLifecycleTests
     private const string DescribeInstancesRequest = "Action=DescribeInstances";
     private const string StopInstancesRequestFormat = "Action=StopInstances&InstanceId.1={0}";
     private const string StartInstancesRequestFormat = "Action=StartInstances&InstanceId.1={0}";
+    private const string RebootInstancesRequestFormat = "Action=RebootInstances&InstanceId.1={0}";
     private const string TerminateInstancesRequestFormat = "Action=TerminateInstances&InstanceId.1={0}";
     private const string DescribeInstanceStatusRequest = "Action=DescribeInstanceStatus";
     private const string StopInstancesResponseRootName = "StopInstancesResponse";
     private const string StartInstancesResponseRootName = "StartInstancesResponse";
+    private const string RebootInstancesResponseRootName = "RebootInstancesResponse";
     private const string TerminateInstancesResponseRootName = "TerminateInstancesResponse";
     private const string DescribeInstanceStatusResponseRootName = "DescribeInstanceStatusResponse";
     private const string InstanceIdPrefix = "i-";
@@ -32,6 +35,8 @@ public class InstanceLifecycleTests
     private const string StateNameStopped = "stopped";
     private const string StateCodeTerminated = "48";
     private const string StateNameTerminated = "terminated";
+    private const string FirstBootCount = "1";
+    private const string SecondBootCount = "2";
     private const string StatusOk = "ok";
     private const string StatusNotOk = "not ok";
     private const string FirstContainerAddress = "10.0.0.1";
@@ -63,6 +68,7 @@ public class InstanceLifecycleTests
             new DescribeInstancesOperation(store, writer),
             new StopInstancesOperation(store, containers, writer),
             new StartInstancesOperation(store, containers, writer),
+            new RebootInstancesOperation(store, containers, writer),
             new TerminateInstancesOperation(store, containers, writer),
             new DescribeInstanceStatusOperation(store, containers, writer)
         };
@@ -397,5 +403,104 @@ public class InstanceLifecycleTests
 
         Assert.That(stoppedInstanceId, Is.EqualTo(launchedInstanceId));
         Assert.That(stoppedStatusName, Is.EqualTo(StatusNotOk));
+    }
+
+    [Test]
+    public async Task Test_That_We_Reboot_A_Launched_Instance_Restarting_Its_Container_And_Report_It_Running_With_An_Increased_Boot_Count()
+    {
+        var launchRequest = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(launchRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var launchDocument = XDocument.Load(_responseBody);
+        var launchedInstanceId = launchDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var launchedBootCount = launchDocument.Descendants().Single(element => element.Name.LocalName == "bootCount").Value;
+
+        var rebootRequest = string.Format(CultureInfo.InvariantCulture, RebootInstancesRequestFormat, launchedInstanceId);
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(rebootRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var rebootDocument = XDocument.Load(_responseBody);
+        var rebootRootName = rebootDocument.Elements().Single().Name.LocalName;
+        var rebootedInstanceId = rebootDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var rebootedStateCode = rebootDocument.Descendants().Single(element => element.Name.LocalName == "code").Value;
+        var rebootedStateName = rebootDocument.Descendants().Single(element => element.Name.LocalName == "name").Value;
+        var rebootedBootCount = rebootDocument.Descendants().Single(element => element.Name.LocalName == "bootCount").Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        Assert.That(launchedBootCount, Is.EqualTo(FirstBootCount));
+        Assert.That(rebootRootName, Is.EqualTo(RebootInstancesResponseRootName));
+        Assert.That(rebootedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(rebootedStateCode, Is.EqualTo(StateCodeRunning));
+        Assert.That(rebootedStateName, Is.EqualTo(StateNameRunning));
+        Assert.That(rebootedBootCount, Is.EqualTo(SecondBootCount));
+        Assert.That(_daemon.LastRestartedContainerId, Is.EqualTo(FirstContainerId));
+        Assert.That(_daemon.StartedContainerCount, Is.EqualTo(LaunchedInstanceCount));
+        Assert.That(_daemon.LastStoppedContainerId, Is.EqualTo(string.Empty));
+        Assert.That(_daemon.LastRemovedContainerId, Is.EqualTo(string.Empty));
+
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(DescribeInstancesRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var document = XDocument.Load(_responseBody);
+        var describedInstanceId = document.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var describedStateName = document.Descendants().Single(element => element.Name.LocalName == "name").Value;
+        var describedBootCount = document.Descendants().Single(element => element.Name.LocalName == "bootCount").Value;
+
+        Assert.That(describedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(describedStateName, Is.EqualTo(StateNameRunning));
+        Assert.That(describedBootCount, Is.EqualTo(SecondBootCount));
+    }
+
+    [Test]
+    public async Task Test_That_We_Answer_A_Reboot_Request_Arriving_From_Inside_The_Guest_Through_The_Same_Restart()
+    {
+        var launchRequest = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(launchRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var launchDocument = XDocument.Load(_responseBody);
+        var launchedInstanceId = launchDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+
+        var rebootRequest = string.Format(CultureInfo.InvariantCulture, RebootInstancesRequestFormat, launchedInstanceId);
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Connection.RemoteIpAddress = IPAddress.Parse(FirstContainerAddress);
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(rebootRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var rebootDocument = XDocument.Load(_responseBody);
+        var rebootRootName = rebootDocument.Elements().Single().Name.LocalName;
+        var rebootedInstanceId = rebootDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        Assert.That(rebootRootName, Is.EqualTo(RebootInstancesResponseRootName));
+        Assert.That(rebootedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(_daemon.LastRestartedContainerId, Is.EqualTo(FirstContainerId));
+        Assert.That(_daemon.StartedContainerCount, Is.EqualTo(LaunchedInstanceCount));
+        Assert.That(_daemon.LastRemovedContainerId, Is.EqualTo(string.Empty));
     }
 }

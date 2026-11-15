@@ -19,6 +19,7 @@ internal class InMemoryContainerDaemon : IContainerDaemon
         LastStartedImageReference = string.Empty;
         LastStoppedContainerId = string.Empty;
         LastStartedExistingContainerId = string.Empty;
+        LastRestartedContainerId = string.Empty;
         LastRemovedContainerId = string.Empty;
     }
 
@@ -27,6 +28,10 @@ internal class InMemoryContainerDaemon : IContainerDaemon
     internal string LastStoppedContainerId { get; private set; }
 
     internal string LastStartedExistingContainerId { get; private set; }
+
+    internal string LastRestartedContainerId { get; private set; }
+
+    internal int StartedContainerCount => _containerCount;
 
     internal string LastRemovedContainerId { get; private set; }
 
@@ -52,6 +57,12 @@ internal class InMemoryContainerDaemon : IContainerDaemon
     {
         _runningContainerIds.Add(containerId);
         LastStartedExistingContainerId = containerId;
+    }
+
+    public void RestartContainer(string containerId)
+    {
+        _runningContainerIds.Add(containerId);
+        LastRestartedContainerId = containerId;
     }
 
     public bool IsRunning(string containerId)

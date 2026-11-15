@@ -16,6 +16,7 @@ internal static class Ec2InstanceResponseExtensions
     private const string InstanceStatusElementName = "instanceStatus";
     private const string SystemStatusElementName = "systemStatus";
     private const string StatusElementName = "status";
+    private const string BootCountElementName = "bootCount";
 
     internal static XElement ToInstanceItem(this Ec2Instance instance, XNamespace xmlNamespace)
     {
@@ -26,7 +27,8 @@ internal static class Ec2InstanceResponseExtensions
                 new XElement(xmlNamespace + StateCodeElementName, instance.StateCode),
                 new XElement(xmlNamespace + StateNameElementName, instance.StateName)),
             new XElement(xmlNamespace + InstanceTypeElementName, instance.InstanceType),
-            new XElement(xmlNamespace + PrivateIpAddressElementName, instance.PrivateIpAddress));
+            new XElement(xmlNamespace + PrivateIpAddressElementName, instance.PrivateIpAddress),
+            new XElement(xmlNamespace + BootCountElementName, instance.BootCount));
     }
 
     internal static XElement ToInstanceStateItem(this Ec2Instance instance, XNamespace xmlNamespace)
@@ -35,7 +37,8 @@ internal static class Ec2InstanceResponseExtensions
             new XElement(xmlNamespace + InstanceIdElementName, instance.InstanceId),
             new XElement(xmlNamespace + CurrentStateElementName,
                 new XElement(xmlNamespace + StateCodeElementName, instance.StateCode),
-                new XElement(xmlNamespace + StateNameElementName, instance.StateName)));
+                new XElement(xmlNamespace + StateNameElementName, instance.StateName)),
+            new XElement(xmlNamespace + BootCountElementName, instance.BootCount));
     }
 
     internal static XElement ToInstanceStatusItem(this Ec2Instance instance, XNamespace xmlNamespace, string statusName)

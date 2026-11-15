@@ -48,12 +48,12 @@ public class RunInstancesOperation : IQueryOperation
         var instanceType = form[InstanceTypeParameterName].ToString();
         var labels = new Dictionary<string, string> { [AmiLabelKey] = imageId };
         var container = _containers.Start(imageReference, labels);
-        var instance = _store.Launch(imageId, instanceType, container.ContainerId);
+        var instance = _store.Launch(imageId, instanceType, container.ContainerId, container.Address);
 
-        await _writer.WriteAsync(context.Response, BuildDocument(instance, container.Address));
+        await _writer.WriteAsync(context.Response, BuildDocument(instance));
     }
 
-    private XDocument BuildDocument(Ec2Instance instance, string privateIpAddress)
+    private XDocument BuildDocument(Ec2Instance instance)
     {
         var xmlNamespace = _writer.XmlNamespace;
 
@@ -62,6 +62,6 @@ public class RunInstancesOperation : IQueryOperation
                 new XElement(xmlNamespace + RequestIdElementName, _writer.NextRequestId()),
                 new XElement(xmlNamespace + ReservationIdElementName, instance.ReservationId),
                 new XElement(xmlNamespace + InstancesSetElementName,
-                    instance.ToInstanceItem(xmlNamespace, privateIpAddress))));
+                    instance.ToInstanceItem(xmlNamespace))));
     }
 }

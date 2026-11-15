@@ -10,6 +10,7 @@ public static class S3ModuleExtensions
     public static IServiceCollection AddS3Module(this IServiceCollection services)
     {
         services.AddSingleton<ObjectStore>();
+        services.AddSingleton<IObjectStore>(serviceProvider => serviceProvider.GetRequiredService<ObjectStore>());
         services.AddSingleton<S3ResponseWriter>();
         services.AddSingleton<S3Surface>();
 

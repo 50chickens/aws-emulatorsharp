@@ -1,5 +1,6 @@
 {
   "listenerPort": 5000,
+  "containerHostName": "host.docker.internal",
   "region": "us-east-1",
   "credentials": {
     "accessKeyId": "dummy-access-key",

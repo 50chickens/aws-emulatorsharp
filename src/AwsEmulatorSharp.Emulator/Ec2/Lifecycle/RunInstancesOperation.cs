@@ -15,7 +15,6 @@ public class RunInstancesOperation : IQueryOperation
     private const string InstanceTypeParameterName = "InstanceType";
     private const string InstanceProfileNameParameterName = "IamInstanceProfile.Name";
     private const string UserDataParameterName = "UserData";
-    private const string AmiLabelKey = "ami-id";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
     private const string ImageNotFoundMessageFormat = "The image id '[{0}]' does not exist";
     private const string ResponseRootElementName = "RunInstancesResponse";
@@ -53,7 +52,11 @@ public class RunInstancesOperation : IQueryOperation
 
         var imageReference = _configuration.AmiToImage[imageId];
         var instanceType = form[InstanceTypeParameterName].ToString();
-        var labels = new Dictionary<string, string> { [AmiLabelKey] = imageId };
+        var labels = new Dictionary<string, string>
+        {
+            [_configuration.AmiLabelKey] = imageId,
+            [_configuration.InstanceTypeLabelKey] = instanceType
+        };
         var container = _containers.Start(imageReference, labels);
         var instance = _store.Launch(imageId, instanceType, container.ContainerId, container.Address);
         var instanceProfileName = form[InstanceProfileNameParameterName].ToString();

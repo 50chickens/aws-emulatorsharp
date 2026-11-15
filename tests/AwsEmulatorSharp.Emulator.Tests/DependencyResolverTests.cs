@@ -1,4 +1,5 @@
 using AwsEmulatorSharp.Emulator.Auth;
+using AwsEmulatorSharp.Emulator.Certificates;
 using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Ec2;
 using AwsEmulatorSharp.Emulator.Host;
@@ -34,6 +35,7 @@ public class DependencyResolverTests
         _services.AddInstallModule();
         _services.AddIdentityModule();
         _services.AddSecretsModule();
+        _services.AddCertificatesModule();
 
         _provider = _services.BuildServiceProvider();
     }

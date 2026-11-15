@@ -1,4 +1,5 @@
 using AwsEmulatorSharp.Emulator.Auth;
+using AwsEmulatorSharp.Emulator.Certificates;
 using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Ec2;
 using AwsEmulatorSharp.Emulator.Host;
@@ -27,6 +28,7 @@ internal static class ServiceCollectionExtensions
         services.AddInstallModule();
         services.AddIdentityModule();
         services.AddSecretsModule();
+        services.AddCertificatesModule();
 
         return services;
     }

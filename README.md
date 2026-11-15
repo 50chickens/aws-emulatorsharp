@@ -10,6 +10,11 @@ The solution lives under `src/`. `ci\ci.ps1` builds and tests the one solution f
 there, and fails before it builds anything when that folder holds none, so a delivery that puts
 the solution at the repository root fails the check.
 
+The same script then runs the installer script tests in `tests\installer`, so the switch strings,
+the WMI call order and the failure paths in `installer\` are part of the check rather than a suite
+someone remembers to run. Those tests need the Pester 5 or later PowerShell module; `-Check
+installer` runs only that stage.
+
 Run it from its own folder:
 
 ```powershell

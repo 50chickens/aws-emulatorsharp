@@ -1,0 +1,10 @@
+{
+  "checks": [
+    { "name": "ec2-run-instances", "passed": true },
+    { "name": "ec2-describe-instances", "passed": true },
+    { "name": "ec2-describe-instance-status", "passed": false },
+    { "name": "ec2-get-console-output", "passed": false },
+    { "name": "ec2-terminate-instances", "passed": true },
+    { "name": "ec2-describe-images", "passed": false }
+  ]
+}

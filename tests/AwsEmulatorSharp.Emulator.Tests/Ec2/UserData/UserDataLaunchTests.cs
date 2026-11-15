@@ -48,7 +48,7 @@ public class UserDataLaunchTests
         var writer = new QueryResponseWriter(new WireConfiguration());
         var commandResult = new ContainerCommandResult(string.Empty, string.Empty, SuccessfulExitCode);
         _daemon = new InMemoryContainerDaemon(commandResult);
-        var containers = new ContainersSurface(_daemon);
+        var containers = new ContainersSurface(_daemon, new ContainersConfigurationReader().Read());
         var environment = new Ec2InstanceEnvironment(new IdentityConfigurationReader().Read(), new HostConfigurationReader().Read());
         var operations = new List<IQueryOperation>
         {

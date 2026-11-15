@@ -3,15 +3,17 @@ namespace AwsEmulatorSharp.Emulator.Containers;
 public class ContainersSurface
 {
     private readonly IContainerDaemon _daemon;
+    private readonly ContainersConfiguration _configuration;
 
-    public ContainersSurface(IContainerDaemon daemon)
+    public ContainersSurface(IContainerDaemon daemon, ContainersConfiguration configuration)
     {
         _daemon = daemon;
+        _configuration = configuration;
     }
 
     public ContainerInstance Start(string imageReference, IReadOnlyDictionary<string, string> labels)
     {
-        var containerId = _daemon.StartContainer(imageReference, labels);
+        var containerId = _daemon.StartContainer(imageReference, labels, _configuration.PublishedPorts);
         var container = ToContainerInstance(containerId);
         return container;
     }

@@ -71,7 +71,7 @@ public class UserDataRebootStageTests
             new ContainerCommandResult(SecondStageOutput, EmptyStandardError, SuccessfulExitCode)
         };
         _daemon = new InMemoryContainerDaemon(commandResults);
-        var containers = new ContainersSurface(_daemon);
+        var containers = new ContainersSurface(_daemon, new ContainersConfigurationReader().Read());
         var environment = new Ec2InstanceEnvironment(new IdentityConfigurationReader().Read(), new HostConfigurationReader().Read());
         var operations = new List<IQueryOperation>
         {

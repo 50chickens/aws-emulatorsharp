@@ -9,6 +9,8 @@ public class DockerContainerDaemon : IContainerDaemon
     private const string ExecutableName = "docker";
     private const string RunVerb = "run";
     private const string DetachFlag = "--detach";
+    private const string PublishFlag = "--publish";
+    private const string PortMappingFormat = "{0}:{0}";
     private const string LabelFlag = "--label=";
     private const string InspectVerb = "inspect";
     private const string FormatFlag = "--format=";
@@ -33,13 +35,20 @@ public class DockerContainerDaemon : IContainerDaemon
     private const string LineSeparator = "\n";
     private const string FailureMessageFormat = "docker exited with {0}: {1}";
 
-    public string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels)
+    public string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels, IReadOnlyList<int> publishedPorts)
     {
         var arguments = new List<string> { RunVerb, DetachFlag };
         var labelArguments = labels
             .Select(pair => $"{LabelFlag}{pair.Key}{KeyValueSeparator}{pair.Value}")
             .ToList();
         arguments.AddRange(labelArguments);
+        var portMappings = publishedPorts
+            .Select(port => string.Format(CultureInfo.InvariantCulture, PortMappingFormat, port))
+            .ToList();
+        var publishArguments = portMappings
+            .SelectMany(portMapping => new List<string> { PublishFlag, portMapping })
+            .ToList();
+        arguments.AddRange(publishArguments);
         arguments.Add(imageReference);
 
         var result = RunDocker(arguments);

@@ -33,7 +33,7 @@ public class InstanceRecoveryTests
         _instanceType = configuration.InstanceTypes.First().Name;
         var commandResult = new ContainerCommandResult(string.Empty, string.Empty, SuccessfulExitCode);
         _daemon = new InMemoryContainerDaemon(commandResult);
-        var containers = new ContainersSurface(_daemon);
+        var containers = new ContainersSurface(_daemon, new ContainersConfigurationReader().Read());
         var servedLabels = new Dictionary<string, string>
         {
             [AmiLabelKey] = _imageId,

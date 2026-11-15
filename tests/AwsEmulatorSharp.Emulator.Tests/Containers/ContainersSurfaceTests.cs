@@ -19,6 +19,7 @@ public class ContainersSurfaceTests
 
     private Dictionary<string, string> _labels;
     private List<string> _command;
+    private ContainersConfiguration _configuration;
     private InMemoryContainerDaemon _daemon;
     private ContainersSurface _surface;
 
@@ -27,9 +28,10 @@ public class ContainersSurfaceTests
     {
         _labels = new Dictionary<string, string> { [LabelKey] = LabelValue };
         _command = new List<string> { CommandName, CommandArgument };
+        _configuration = new ContainersConfigurationReader().Read();
         var commandResult = new ContainerCommandResult(StandardOutput, StandardError, ExitCode);
         _daemon = new InMemoryContainerDaemon(commandResult);
-        _surface = new ContainersSurface(_daemon);
+        _surface = new ContainersSurface(_daemon, _configuration);
     }
 
     [Test]
@@ -57,7 +59,7 @@ public class ContainersSurfaceTests
     public void Test_That_We_Can_Find_A_Labelled_Container_By_Its_Label_After_A_Restart()
     {
         var container = _surface.Start(ImageReference, _labels);
-        var restartedSurface = new ContainersSurface(_daemon);
+        var restartedSurface = new ContainersSurface(_daemon, _configuration);
 
         var containers = restartedSurface.FindByLabel(LabelKey, LabelValue);
 
@@ -81,7 +83,7 @@ public class ContainersSurfaceTests
     public void Test_That_We_Can_Find_A_Labelled_Container_By_Its_Label_Key_After_A_Restart()
     {
         var container = _surface.Start(ImageReference, _labels);
-        var restartedSurface = new ContainersSurface(_daemon);
+        var restartedSurface = new ContainersSurface(_daemon, _configuration);
 
         var containers = restartedSurface.FindByLabel(LabelKey);
 
@@ -93,7 +95,7 @@ public class ContainersSurfaceTests
     public void Test_That_We_Can_Read_The_Labels_A_Container_Carries_After_A_Restart()
     {
         var container = _surface.Start(ImageReference, _labels);
-        var restartedSurface = new ContainersSurface(_daemon);
+        var restartedSurface = new ContainersSurface(_daemon, _configuration);
 
         var labels = restartedSurface.Labels(container.ContainerId);
 

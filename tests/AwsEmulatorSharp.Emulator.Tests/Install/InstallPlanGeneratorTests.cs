@@ -16,6 +16,9 @@ public class InstallPlanGeneratorTests
 {
     private const string MediaFileName = "sql-server-setup.exe";
     private const string OlderMediaFileName = "sql-server-setup-2025.exe";
+    private const string ReportingInstallerFileName = "SQLServerReportingServices.exe";
+    private const string DatabaseEngineStepName = "database-engine";
+    private const string ReportServerStepName = "report-server";
     private const string MediaContentText = "installer-media";
     private const string InstanceId = "i-0123456789abcdef0";
     private const string ReservationId = "r-0123456789abcdef0";
@@ -45,6 +48,7 @@ public class InstallPlanGeneratorTests
     private Ec2Instance _instance;
     private InstallPlanGenerator _generator;
     private string _mediaKey;
+    private string _reportingInstallerKey;
 
     [SetUp]
     public void SetUp()
@@ -53,10 +57,12 @@ public class InstallPlanGeneratorTests
         _ec2Configuration = new Ec2ConfigurationReader().Read();
         _configuration = new InstallConfigurationReader().Read();
         _mediaKey = _configuration.MediaKeyPrefix + MediaFileName;
+        _reportingInstallerKey = _configuration.ReportingMediaKeyPrefix + ReportingInstallerFileName;
         var olderMediaKey = _configuration.MediaKeyPrefix + OlderMediaFileName;
         var objectStore = new ObjectStore();
         objectStore.PutObject(_configuration.MediaBucketName, olderMediaKey, Encoding.UTF8.GetBytes(MediaContentText));
         objectStore.PutObject(_configuration.MediaBucketName, _mediaKey, Encoding.UTF8.GetBytes(MediaContentText));
+        objectStore.PutObject(_configuration.MediaBucketName, _reportingInstallerKey, Encoding.UTF8.GetBytes(MediaContentText));
         var timeProvider = new FixedTimeProvider(_signingTime);
         var mediaUrlMinter = new MediaUrlMinter(_hostConfiguration, _ec2Configuration, timeProvider);
 
@@ -73,42 +79,75 @@ public class InstallPlanGeneratorTests
     }
 
     [Test]
-    public void Test_That_The_Plan_Names_The_Newest_Media_Object_The_Object_Store_Holds()
+    public void Test_That_The_Plan_Carries_The_Database_Engine_Step_Then_The_Report_Server_Step()
     {
         var plan = _generator.For(_instance);
+        var stepNames = plan.Steps.Select(step => step.Name).ToList();
+        var expectedStepNames = new List<string> { DatabaseEngineStepName, ReportServerStepName };
 
-        Assert.That(plan.MediaBucketName, Is.EqualTo(_configuration.MediaBucketName));
-        Assert.That(plan.MediaKey, Is.EqualTo(_mediaKey));
+        Assert.That(stepNames, Is.EqualTo(expectedStepNames));
     }
 
     [Test]
-    public void Test_That_The_Presigned_Media_Url_Addresses_The_Media_Object_From_The_Container_Endpoint()
+    public void Test_That_The_Database_Engine_Step_Names_The_Newest_Media_Object_The_Object_Store_Holds()
     {
         var plan = _generator.For(_instance);
+        var databaseEngineStep = plan.Steps.Single(step => step.Name.Equals(DatabaseEngineStepName));
+
+        Assert.That(plan.MediaBucketName, Is.EqualTo(_configuration.MediaBucketName));
+        Assert.That(databaseEngineStep.InstallerKey, Is.EqualTo(_mediaKey));
+    }
+
+    [Test]
+    public void Test_That_The_Presigned_Installer_Url_Addresses_The_Media_Object_From_The_Container_Endpoint()
+    {
+        var plan = _generator.For(_instance);
+        var databaseEngineStep = plan.Steps.Single(step => step.Name.Equals(DatabaseEngineStepName));
         var endpoint = string.Format(CultureInfo.InvariantCulture, EndpointFormat, _hostConfiguration.ContainerHostName, _hostConfiguration.ListenerPort);
         var presignedPath = string.Format(CultureInfo.InvariantCulture, PresignedUrlFormat, _configuration.MediaBucketName, _mediaKey);
 
-        Assert.That(plan.MediaUrl, Does.Contain(endpoint));
-        Assert.That(plan.MediaUrl, Does.Contain(presignedPath));
+        Assert.That(databaseEngineStep.InstallerUrl, Does.Contain(endpoint));
+        Assert.That(databaseEngineStep.InstallerUrl, Does.Contain(presignedPath));
     }
 
     [Test]
-    public void Test_That_The_Presigned_Media_Url_Is_Signed_With_The_Emulator_Credential()
+    public void Test_That_The_Presigned_Installer_Url_Is_Signed_With_The_Emulator_Credential()
     {
         var plan = _generator.For(_instance);
+        var databaseEngineStep = plan.Steps.Single(step => step.Name.Equals(DatabaseEngineStepName));
         var credential = string.Format(CultureInfo.InvariantCulture, CredentialFormat, _hostConfiguration.Credentials.AccessKeyId, SigningDate, _ec2Configuration.Region.Name);
 
-        Assert.That(plan.MediaUrl, Does.Contain(Uri.EscapeDataString(credential)));
-        Assert.That(plan.MediaUrl, Does.Contain(SigningTimestamp));
-        Assert.That(plan.MediaUrl, Does.Contain(SignatureQueryName + ExpectedSignature));
+        Assert.That(databaseEngineStep.InstallerUrl, Does.Contain(Uri.EscapeDataString(credential)));
+        Assert.That(databaseEngineStep.InstallerUrl, Does.Contain(SigningTimestamp));
+        Assert.That(databaseEngineStep.InstallerUrl, Does.Contain(SignatureQueryName + ExpectedSignature));
     }
 
     [Test]
-    public void Test_That_The_Plan_Carries_An_Unattended_Setup_Command_Line_With_The_Integration_Services_Feature()
+    public void Test_That_The_Database_Engine_Step_Carries_An_Unattended_Setup_Command_Line_With_The_Integration_Services_Feature()
     {
         var plan = _generator.For(_instance);
+        var databaseEngineStep = plan.Steps.Single(step => step.Name.Equals(DatabaseEngineStepName));
         var expectedCommandLine = string.Format(CultureInfo.InvariantCulture, ExpectedCommandLineFormat, _configuration.MediaFolderPath, MediaFileName);
 
-        Assert.That(plan.SetupCommandLine, Is.EqualTo(expectedCommandLine));
+        Assert.That(databaseEngineStep.CommandLine, Is.EqualTo(expectedCommandLine));
+    }
+
+    [Test]
+    public void Test_That_The_Report_Server_Step_Names_The_Reporting_Installer()
+    {
+        var plan = _generator.For(_instance);
+        var reportServerStep = plan.Steps.OfType<ReportServerInstallStep>().Single();
+
+        Assert.That(reportServerStep.InstallerKey, Is.EqualTo(_reportingInstallerKey));
+        Assert.That(reportServerStep.CommandLine, Does.Contain(ReportingInstallerFileName));
+    }
+
+    [Test]
+    public void Test_That_The_Report_Server_Step_Names_The_Report_Server_Database_It_Configures()
+    {
+        var plan = _generator.For(_instance);
+        var reportServerStep = plan.Steps.OfType<ReportServerInstallStep>().Single();
+
+        Assert.That(reportServerStep.DatabaseName, Is.EqualTo(_configuration.ReportServerDatabaseName));
     }
 }

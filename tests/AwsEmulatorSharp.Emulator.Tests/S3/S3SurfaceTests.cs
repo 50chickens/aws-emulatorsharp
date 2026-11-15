@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests.S3;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class S3SurfaceTests
 {
     private const string GetMethod = "GET";

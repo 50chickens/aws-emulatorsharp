@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests.Auth;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class RequestCredentialTests
 {
     private const string SignedHeaderAuthorization = "AWS4-HMAC-SHA256 Credential=dummy-access-key/20240101/us-east-1/s3/aws4_request, SignedHeaders=host;x-amz-date, Signature=0f8b1a2c3d4e5f60";

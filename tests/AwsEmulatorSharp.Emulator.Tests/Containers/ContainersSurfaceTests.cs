@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class ContainersSurfaceTests
 {
     private const string ImageReference = "mcr.microsoft.com/dotnet/framework/runtime:4.8.1-windowsservercore-ltsc2025";

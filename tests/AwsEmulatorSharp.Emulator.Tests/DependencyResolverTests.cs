@@ -12,7 +12,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class DependencyResolverTests
 {
     private IServiceCollection _services;

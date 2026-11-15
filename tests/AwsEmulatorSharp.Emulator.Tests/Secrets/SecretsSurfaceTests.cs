@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests.Secrets;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class SecretsSurfaceTests
 {
     private const string SecretName = "installer/database-password";

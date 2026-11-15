@@ -6,6 +6,7 @@ using AwsEmulatorSharp.Emulator.Images;
 using AwsEmulatorSharp.Emulator.S3;
 using AwsEmulatorSharp.Emulator.Secrets;
 using AwsEmulatorSharp.Emulator.Wire;
+using Coop.Library.Squawk.Extensions;
 
 namespace AwsEmulatorSharp.Host.Extensions;
 
@@ -13,6 +14,7 @@ internal static class ServiceCollectionExtensions
 {
     internal static IServiceCollection AddEmulatorModules(this IServiceCollection services)
     {
+        services.AddSquawk();
         services.AddContainersModule();
         services.AddWireModule();
         services.AddAuthModule();

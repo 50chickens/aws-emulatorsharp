@@ -50,6 +50,12 @@ public class ContainersSurface
         _daemon.RemoveContainer(containerId);
     }
 
+    public bool IsRunning(string containerId)
+    {
+        var isRunning = _daemon.IsRunning(containerId);
+        return isRunning;
+    }
+
     private ContainerInstance ToContainerInstance(string containerId)
     {
         var isRunning = _daemon.IsRunning(containerId);

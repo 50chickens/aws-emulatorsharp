@@ -13,14 +13,16 @@ public class InstanceStore
     private const int RunningStateCode = 16;
     private const string StoppedStateName = "stopped";
     private const int StoppedStateCode = 80;
+    private const string TerminatedStateName = "terminated";
+    private const int TerminatedStateCode = 48;
 
     private readonly ConcurrentDictionary<string, Ec2Instance> _instances = new(StringComparer.Ordinal);
 
-    public Ec2Instance Launch(string imageId, string instanceType, string containerId)
+    public Ec2Instance Launch(string imageId, string instanceType, string containerId, string privateIpAddress)
     {
         var instanceId = InstanceIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
         var reservationId = ReservationIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
-        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, RunningStateName, RunningStateCode);
+        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, privateIpAddress, RunningStateName, RunningStateCode);
         _instances[instanceId] = instance;
 
         return instance;
@@ -40,6 +42,14 @@ public class InstanceStore
         _instances[instance.InstanceId] = runningInstance;
 
         return runningInstance;
+    }
+
+    public Ec2Instance Terminate(Ec2Instance instance)
+    {
+        var terminatedInstance = instance.WithState(TerminatedStateName, TerminatedStateCode);
+        _instances[instance.InstanceId] = terminatedInstance;
+
+        return terminatedInstance;
     }
 
     public IReadOnlyList<Ec2Instance> Find(List<string> instanceIds)

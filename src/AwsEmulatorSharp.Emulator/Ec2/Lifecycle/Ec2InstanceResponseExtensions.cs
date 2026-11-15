@@ -13,8 +13,11 @@ internal static class Ec2InstanceResponseExtensions
     private const string InstanceTypeElementName = "instanceType";
     private const string PrivateIpAddressElementName = "privateIpAddress";
     private const string CurrentStateElementName = "currentState";
+    private const string InstanceStatusElementName = "instanceStatus";
+    private const string SystemStatusElementName = "systemStatus";
+    private const string StatusElementName = "status";
 
-    internal static XElement ToInstanceItem(this Ec2Instance instance, XNamespace xmlNamespace, string privateIpAddress)
+    internal static XElement ToInstanceItem(this Ec2Instance instance, XNamespace xmlNamespace)
     {
         return new XElement(xmlNamespace + ItemElementName,
             new XElement(xmlNamespace + InstanceIdElementName, instance.InstanceId),
@@ -23,7 +26,7 @@ internal static class Ec2InstanceResponseExtensions
                 new XElement(xmlNamespace + StateCodeElementName, instance.StateCode),
                 new XElement(xmlNamespace + StateNameElementName, instance.StateName)),
             new XElement(xmlNamespace + InstanceTypeElementName, instance.InstanceType),
-            new XElement(xmlNamespace + PrivateIpAddressElementName, privateIpAddress));
+            new XElement(xmlNamespace + PrivateIpAddressElementName, instance.PrivateIpAddress));
     }
 
     internal static XElement ToInstanceStateItem(this Ec2Instance instance, XNamespace xmlNamespace)
@@ -33,5 +36,18 @@ internal static class Ec2InstanceResponseExtensions
             new XElement(xmlNamespace + CurrentStateElementName,
                 new XElement(xmlNamespace + StateCodeElementName, instance.StateCode),
                 new XElement(xmlNamespace + StateNameElementName, instance.StateName)));
+    }
+
+    internal static XElement ToInstanceStatusItem(this Ec2Instance instance, XNamespace xmlNamespace, string statusName)
+    {
+        return new XElement(xmlNamespace + ItemElementName,
+            new XElement(xmlNamespace + InstanceIdElementName, instance.InstanceId),
+            new XElement(xmlNamespace + InstanceStateElementName,
+                new XElement(xmlNamespace + StateCodeElementName, instance.StateCode),
+                new XElement(xmlNamespace + StateNameElementName, instance.StateName)),
+            new XElement(xmlNamespace + InstanceStatusElementName,
+                new XElement(xmlNamespace + StatusElementName, statusName)),
+            new XElement(xmlNamespace + SystemStatusElementName,
+                new XElement(xmlNamespace + StatusElementName, statusName)));
     }
 }

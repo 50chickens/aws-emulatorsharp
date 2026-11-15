@@ -18,14 +18,22 @@ public class InstanceLifecycleTests
     private const string DescribeInstancesRequest = "Action=DescribeInstances";
     private const string StopInstancesRequestFormat = "Action=StopInstances&InstanceId.1={0}";
     private const string StartInstancesRequestFormat = "Action=StartInstances&InstanceId.1={0}";
+    private const string TerminateInstancesRequestFormat = "Action=TerminateInstances&InstanceId.1={0}";
+    private const string DescribeInstanceStatusRequest = "Action=DescribeInstanceStatus";
     private const string StopInstancesResponseRootName = "StopInstancesResponse";
     private const string StartInstancesResponseRootName = "StartInstancesResponse";
+    private const string TerminateInstancesResponseRootName = "TerminateInstancesResponse";
+    private const string DescribeInstanceStatusResponseRootName = "DescribeInstanceStatusResponse";
     private const string InstanceIdPrefix = "i-";
     private const string FirstContainerId = "container-1";
     private const string StateCodeRunning = "16";
     private const string StateNameRunning = "running";
     private const string StateCodeStopped = "80";
     private const string StateNameStopped = "stopped";
+    private const string StateCodeTerminated = "48";
+    private const string StateNameTerminated = "terminated";
+    private const string StatusOk = "ok";
+    private const string StatusNotOk = "not ok";
     private const string FirstContainerAddress = "10.0.0.1";
     private const string UnknownImageId = "ami-00000000000000000";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
@@ -52,9 +60,11 @@ public class InstanceLifecycleTests
         var operations = new List<IQueryOperation>
         {
             new RunInstancesOperation(configuration, store, containers, writer),
-            new DescribeInstancesOperation(store, containers, writer),
+            new DescribeInstancesOperation(store, writer),
             new StopInstancesOperation(store, containers, writer),
-            new StartInstancesOperation(store, containers, writer)
+            new StartInstancesOperation(store, containers, writer),
+            new TerminateInstancesOperation(store, containers, writer),
+            new DescribeInstanceStatusOperation(store, containers, writer)
         };
 
         _imageId = configuration.AmiToImage.Keys.First();
@@ -263,5 +273,129 @@ public class InstanceLifecycleTests
         Assert.That(startedStateCode, Is.EqualTo(StateCodeRunning));
         Assert.That(startedStateName, Is.EqualTo(StateNameRunning));
         Assert.That(_daemon.LastStartedExistingContainerId, Is.EqualTo(FirstContainerId));
+    }
+
+    [Test]
+    public async Task Test_That_We_Can_Terminate_A_Launched_Instance_Removing_Its_Container_And_Describe_It_As_Terminated()
+    {
+        var launchRequest = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(launchRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var launchDocument = XDocument.Load(_responseBody);
+        var launchedInstanceId = launchDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+
+        var terminateRequest = string.Format(CultureInfo.InvariantCulture, TerminateInstancesRequestFormat, launchedInstanceId);
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(terminateRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var terminateDocument = XDocument.Load(_responseBody);
+        var terminateRootName = terminateDocument.Elements().Single().Name.LocalName;
+        var terminatedInstanceId = terminateDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var terminatedStateCode = terminateDocument.Descendants().Single(element => element.Name.LocalName == "code").Value;
+        var terminatedStateName = terminateDocument.Descendants().Single(element => element.Name.LocalName == "name").Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        Assert.That(terminateRootName, Is.EqualTo(TerminateInstancesResponseRootName));
+        Assert.That(terminatedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(terminatedStateCode, Is.EqualTo(StateCodeTerminated));
+        Assert.That(terminatedStateName, Is.EqualTo(StateNameTerminated));
+        Assert.That(_daemon.LastRemovedContainerId, Is.EqualTo(FirstContainerId));
+
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(DescribeInstancesRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var document = XDocument.Load(_responseBody);
+        var describedInstanceId = document.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var describedStateCode = document.Descendants().Single(element => element.Name.LocalName == "code").Value;
+        var describedStateName = document.Descendants().Single(element => element.Name.LocalName == "name").Value;
+
+        Assert.That(describedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(describedStateCode, Is.EqualTo(StateCodeTerminated));
+        Assert.That(describedStateName, Is.EqualTo(StateNameTerminated));
+    }
+
+    [Test]
+    public async Task Test_That_We_Describe_The_Instance_Status_Ok_While_The_Container_Runs_And_Not_Ok_Once_It_Is_Stopped()
+    {
+        var launchRequest = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(launchRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var launchDocument = XDocument.Load(_responseBody);
+        var launchedInstanceId = launchDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(DescribeInstanceStatusRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var runningDocument = XDocument.Load(_responseBody);
+        var runningRootName = runningDocument.Elements().Single().Name.LocalName;
+        var runningInstanceId = runningDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var runningStatusName = runningDocument.Descendants()
+            .Single(element => element.Name.LocalName == "instanceStatus")
+            .Elements()
+            .Single(element => element.Name.LocalName == "status")
+            .Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        Assert.That(runningRootName, Is.EqualTo(DescribeInstanceStatusResponseRootName));
+        Assert.That(runningInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(runningStatusName, Is.EqualTo(StatusOk));
+
+        var stopRequest = string.Format(CultureInfo.InvariantCulture, StopInstancesRequestFormat, launchedInstanceId);
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(stopRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(DescribeInstanceStatusRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var stoppedDocument = XDocument.Load(_responseBody);
+        var stoppedInstanceId = stoppedDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var stoppedStatusName = stoppedDocument.Descendants()
+            .Single(element => element.Name.LocalName == "instanceStatus")
+            .Elements()
+            .Single(element => element.Name.LocalName == "status")
+            .Value;
+
+        Assert.That(stoppedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(stoppedStatusName, Is.EqualTo(StatusNotOk));
     }
 }

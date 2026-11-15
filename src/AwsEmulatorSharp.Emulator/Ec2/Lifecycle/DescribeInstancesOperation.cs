@@ -1,5 +1,4 @@
 using System.Xml.Linq;
-using AwsEmulatorSharp.Emulator.Containers;
 using AwsEmulatorSharp.Emulator.Ec2.Describe;
 using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.AspNetCore.Http;
@@ -18,13 +17,11 @@ public class DescribeInstancesOperation : IQueryOperation
     private const string InstancesSetElementName = "instancesSet";
 
     private readonly InstanceStore _store;
-    private readonly ContainersSurface _containers;
     private readonly QueryResponseWriter _writer;
 
-    public DescribeInstancesOperation(InstanceStore store, ContainersSurface containers, QueryResponseWriter writer)
+    public DescribeInstancesOperation(InstanceStore store, QueryResponseWriter writer)
     {
         _store = store;
-        _containers = containers;
         _writer = writer;
     }
 
@@ -55,7 +52,7 @@ public class DescribeInstancesOperation : IQueryOperation
     private XElement BuildReservationItem(XNamespace xmlNamespace, IGrouping<string, Ec2Instance> reservationGroup)
     {
         var instanceItems = reservationGroup
-            .Select(instance => instance.ToInstanceItem(xmlNamespace, _containers.Address(instance.ContainerId)));
+            .Select(instance => instance.ToInstanceItem(xmlNamespace));
 
         return new XElement(xmlNamespace + ItemElementName,
             new XElement(xmlNamespace + ReservationIdElementName, reservationGroup.Key),

@@ -128,6 +128,21 @@ internal class InMemoryContainerDaemon : IContainerDaemon
         return containerIds;
     }
 
+    public IReadOnlyList<string> FindContainerIds(string labelKey)
+    {
+        var containerIds = _labelsByContainerId
+            .Where(pair => pair.Value.ContainsKey(labelKey))
+            .Select(pair => pair.Key)
+            .ToList();
+        return containerIds;
+    }
+
+    public IReadOnlyDictionary<string, string> GetLabels(string containerId)
+    {
+        var labels = _labelsByContainerId[containerId];
+        return labels;
+    }
+
     public void RemoveContainer(string containerId)
     {
         _labelsByContainerId.Remove(containerId);

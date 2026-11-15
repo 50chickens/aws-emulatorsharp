@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.Json;
 
 namespace AwsEmulatorSharp.Emulator.Containers;
 
@@ -12,6 +13,7 @@ public class DockerContainerDaemon : IContainerDaemon
     private const string InspectVerb = "inspect";
     private const string FormatFlag = "--format=";
     private const string StateFormat = "{{.State.Running}}";
+    private const string LabelsFormat = "{{json .Config.Labels}}";
     private const string AddressFormat = "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}";
     private const string RunningValue = "true";
     private const string ListVerb = "ps";
@@ -91,13 +93,25 @@ public class DockerContainerDaemon : IContainerDaemon
     public IReadOnlyList<string> FindContainerIds(string labelKey, string labelValue)
     {
         var filter = $"{LabelFilterName}{labelKey}{KeyValueSeparator}{labelValue}";
-        var arguments = new List<string> { ListVerb, AllFlag, QuietFlag, $"{FilterFlag}{filter}" };
-        var result = RunDocker(arguments);
-
-        List<string> containerIds = result.StandardOutput
-            .Split(LineSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .ToList();
+        var containerIds = FindContainerIdsByFilter(filter);
         return containerIds;
+    }
+
+    public IReadOnlyList<string> FindContainerIds(string labelKey)
+    {
+        var filter = $"{LabelFilterName}{labelKey}";
+        var containerIds = FindContainerIdsByFilter(filter);
+        return containerIds;
+    }
+
+    public IReadOnlyDictionary<string, string> GetLabels(string containerId)
+    {
+        var arguments = new List<string> { InspectVerb, $"{FormatFlag}{LabelsFormat}", containerId };
+        var result = RunDocker(arguments);
+        ThrowOnFailure(result);
+
+        var labels = JsonSerializer.Deserialize<Dictionary<string, string>>(result.StandardOutput);
+        return labels!;
     }
 
     public ContainerCommandResult RunCommand(string containerId, IReadOnlyList<string> command)
@@ -125,6 +139,17 @@ public class DockerContainerDaemon : IContainerDaemon
     {
         var arguments = new List<string> { RemoveVerb, ForceFlag, containerId };
         RunDocker(arguments);
+    }
+
+    private IReadOnlyList<string> FindContainerIdsByFilter(string filter)
+    {
+        var arguments = new List<string> { ListVerb, AllFlag, QuietFlag, $"{FilterFlag}{filter}" };
+        var result = RunDocker(arguments);
+
+        List<string> containerIds = result.StandardOutput
+            .Split(LineSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+        return containerIds;
     }
 
     private ContainerCommandResult RunDocker(List<string> arguments)

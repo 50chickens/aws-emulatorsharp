@@ -1,7 +1,7 @@
 #requires -Version 7.0
 
 param(
-    [ValidateSet('all', 'build', 'test')]
+    [ValidateSet('all', 'build', 'test', 'installer')]
     [string] $Check = 'all'
 )
 
@@ -17,22 +17,26 @@ function Write-Log($message)
 
 function Get-Configuration
 {
-    $repositoryRoot     = (Get-Item '..').FullName
-    $solutionFolder     = "$repositoryRoot\src"
-    $solutionFilters    = @('*.slnx', '*.sln')
-    $expectedSolutions  = 1
-    $dotNetCommand      = 'dotnet'
-    $buildConfiguration = 'Release'
-    $testLogger         = 'console;verbosity=normal'
+    $repositoryRoot       = (Get-Item '..').FullName
+    $solutionFolder       = "$repositoryRoot\src"
+    $solutionFilters      = @('*.slnx', '*.sln')
+    $expectedSolutions    = 1
+    $dotNetCommand        = 'dotnet'
+    $buildConfiguration   = 'Release'
+    $testLogger           = 'console;verbosity=normal'
+    $installerTestPath    = "$repositoryRoot\tests\installer\InstallerScripts.Tests.ps1"
+    $pesterMinimumVersion = '5.0'
 
     return [pscustomobject]@{
-        RepositoryRoot     = $repositoryRoot
-        SolutionFolder     = $solutionFolder
-        SolutionFilters    = $solutionFilters
-        ExpectedSolutions  = $expectedSolutions
-        DotNetCommand      = $dotNetCommand
-        BuildConfiguration = $buildConfiguration
-        TestLogger         = $testLogger
+        RepositoryRoot       = $repositoryRoot
+        SolutionFolder       = $solutionFolder
+        SolutionFilters      = $solutionFilters
+        ExpectedSolutions    = $expectedSolutions
+        DotNetCommand        = $dotNetCommand
+        BuildConfiguration   = $buildConfiguration
+        TestLogger           = $testLogger
+        InstallerTestPath    = $installerTestPath
+        PesterMinimumVersion = $pesterMinimumVersion
     }
 }
 
@@ -94,6 +98,21 @@ function Invoke-Test($configuration)
     }
 }
 
+function Invoke-InstallerTest($configuration)
+{
+    $installerTestPath    = $configuration.InstallerTestPath
+    $pesterMinimumVersion = $configuration.PesterMinimumVersion
+    Write-Log "installer test $installerTestPath"
+
+    $null = Import-Module Pester -MinimumVersion $pesterMinimumVersion
+    $testResult  = Invoke-Pester -Path $installerTestPath -Output Normal -PassThru
+    $failedCount = $testResult.FailedCount
+    if ($failedCount -ne 0)
+    {
+        throw "ci: installer test failed: $failedCount test(s)"
+    }
+}
+
 $configuration = Get-Configuration
 $configuration = Add-RuntimeConfiguration $configuration
 
@@ -105,6 +124,11 @@ if ($Check -in @('all', 'build'))
 if ($Check -in @('all', 'test'))
 {
     Invoke-Test $configuration
+}
+
+if ($Check -in @('all', 'test', 'installer'))
+{
+    Invoke-InstallerTest $configuration
 }
 
 Write-Log "ci passed ($Check)"

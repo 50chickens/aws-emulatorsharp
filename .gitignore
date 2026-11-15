@@ -56,5 +56,8 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# Installer script test work area
+tests/installer/work/
+
 # Cursus runtime, its data root and its logs
 cursus/

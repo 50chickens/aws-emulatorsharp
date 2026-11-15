@@ -56,8 +56,24 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
-# Installer script test work area
-tests/installer/work/
-
-# Cursus runtime, its data root and its logs
+# Windows
+Thumbs.db
+*.out.wav
+temporary_assets/**
+[G|g]oogle*
+**/*Google**/*
+**/research_docs/*
+*.syx
+*.bin
+*.raw
+*.so
+*.dll
+*.dylib
+**/ghidra*
+*.zip
+cached_assets/
+*.lock
+output/
+temp/
 cursus/
+.vs

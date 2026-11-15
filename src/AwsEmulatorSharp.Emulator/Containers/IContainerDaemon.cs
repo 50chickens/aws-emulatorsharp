@@ -4,6 +4,10 @@ public interface IContainerDaemon
 {
     string StartContainer(string imageReference, IReadOnlyDictionary<string, string> labels);
 
+    void StopContainer(string containerId);
+
+    void StartExistingContainer(string containerId);
+
     bool IsRunning(string containerId);
 
     string GetAddress(string containerId);

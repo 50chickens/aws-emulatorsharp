@@ -20,6 +20,8 @@ public class DockerContainerDaemon : IContainerDaemon
     private const string FilterFlag = "--filter=";
     private const string LabelFilterName = "label=";
     private const string ExecVerb = "exec";
+    private const string StopVerb = "stop";
+    private const string StartVerb = "start";
     private const string RemoveVerb = "rm";
     private const string ForceFlag = "--force";
     private const string KeyValueSeparator = "=";
@@ -50,6 +52,20 @@ public class DockerContainerDaemon : IContainerDaemon
         var stateValue = result.StandardOutput.Trim();
         var isRunning = string.Equals(stateValue, RunningValue, StringComparison.Ordinal);
         return isRunning;
+    }
+
+    public void StopContainer(string containerId)
+    {
+        var arguments = new List<string> { StopVerb, containerId };
+        var result = RunDocker(arguments);
+        ThrowOnFailure(result);
+    }
+
+    public void StartExistingContainer(string containerId)
+    {
+        var arguments = new List<string> { StartVerb, containerId };
+        var result = RunDocker(arguments);
+        ThrowOnFailure(result);
     }
 
     public string GetAddress(string containerId)

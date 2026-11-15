@@ -16,6 +16,16 @@ public class ContainersSurface
         return container;
     }
 
+    public void Stop(string containerId)
+    {
+        _daemon.StopContainer(containerId);
+    }
+
+    public void StartExisting(string containerId)
+    {
+        _daemon.StartExistingContainer(containerId);
+    }
+
     public ContainerCommandResult RunCommand(string containerId, IReadOnlyList<string> command)
     {
         var commandResult = _daemon.RunCommand(containerId, command);

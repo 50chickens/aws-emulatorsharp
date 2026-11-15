@@ -26,4 +26,9 @@ public class Ec2Instance
     public string StateName { get; }
 
     public int StateCode { get; }
+
+    public Ec2Instance WithState(string stateName, int stateCode)
+    {
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, stateName, stateCode);
+    }
 }

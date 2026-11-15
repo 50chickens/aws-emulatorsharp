@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Containers;
@@ -15,9 +16,16 @@ public class InstanceLifecycleTests
 {
     private const string FormContentType = "application/x-www-form-urlencoded";
     private const string DescribeInstancesRequest = "Action=DescribeInstances";
+    private const string StopInstancesRequestFormat = "Action=StopInstances&InstanceId.1={0}";
+    private const string StartInstancesRequestFormat = "Action=StartInstances&InstanceId.1={0}";
+    private const string StopInstancesResponseRootName = "StopInstancesResponse";
+    private const string StartInstancesResponseRootName = "StartInstancesResponse";
     private const string InstanceIdPrefix = "i-";
+    private const string FirstContainerId = "container-1";
     private const string StateCodeRunning = "16";
     private const string StateNameRunning = "running";
+    private const string StateCodeStopped = "80";
+    private const string StateNameStopped = "stopped";
     private const string FirstContainerAddress = "10.0.0.1";
     private const string UnknownImageId = "ami-00000000000000000";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
@@ -44,7 +52,9 @@ public class InstanceLifecycleTests
         var operations = new List<IQueryOperation>
         {
             new RunInstancesOperation(configuration, store, containers, writer),
-            new DescribeInstancesOperation(store, containers, writer)
+            new DescribeInstancesOperation(store, containers, writer),
+            new StopInstancesOperation(store, containers, writer),
+            new StartInstancesOperation(store, containers, writer)
         };
 
         _imageId = configuration.AmiToImage.Keys.First();
@@ -150,5 +160,108 @@ public class InstanceLifecycleTests
         Assert.That(errorCode, Is.EqualTo(InvalidImageIdNotFoundCode));
         Assert.That(errorMessage, Does.Contain(UnknownImageId));
         Assert.That(_daemon.LastStartedImageReference, Is.EqualTo(string.Empty));
+    }
+
+    [Test]
+    public async Task Test_That_We_Can_Stop_A_Launched_Instance_And_Describe_It_As_Stopped()
+    {
+        var launchRequest = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(launchRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var launchDocument = XDocument.Load(_responseBody);
+        var launchedInstanceId = launchDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+
+        var stopRequest = string.Format(CultureInfo.InvariantCulture, StopInstancesRequestFormat, launchedInstanceId);
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(stopRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var stopDocument = XDocument.Load(_responseBody);
+        var stopRootName = stopDocument.Elements().Single().Name.LocalName;
+        var stoppedInstanceId = stopDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var stoppedStateCode = stopDocument.Descendants().Single(element => element.Name.LocalName == "code").Value;
+        var stoppedStateName = stopDocument.Descendants().Single(element => element.Name.LocalName == "name").Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        Assert.That(stopRootName, Is.EqualTo(StopInstancesResponseRootName));
+        Assert.That(stoppedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(stoppedStateCode, Is.EqualTo(StateCodeStopped));
+        Assert.That(stoppedStateName, Is.EqualTo(StateNameStopped));
+        Assert.That(_daemon.LastStoppedContainerId, Is.EqualTo(FirstContainerId));
+
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(DescribeInstancesRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var document = XDocument.Load(_responseBody);
+        var describedInstanceId = document.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var describedStateCode = document.Descendants().Single(element => element.Name.LocalName == "code").Value;
+        var describedStateName = document.Descendants().Single(element => element.Name.LocalName == "name").Value;
+
+        Assert.That(describedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(describedStateCode, Is.EqualTo(StateCodeStopped));
+        Assert.That(describedStateName, Is.EqualTo(StateNameStopped));
+    }
+
+    [Test]
+    public async Task Test_That_We_Can_Start_The_Stopped_Instance_And_Report_Its_Instance_Id_Running()
+    {
+        var launchRequest = $"Action=RunInstances&ImageId={_imageId}&InstanceType={_instanceType}";
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(launchRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var launchDocument = XDocument.Load(_responseBody);
+        var launchedInstanceId = launchDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+
+        var stopRequest = string.Format(CultureInfo.InvariantCulture, StopInstancesRequestFormat, launchedInstanceId);
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(stopRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        var startRequest = string.Format(CultureInfo.InvariantCulture, StartInstancesRequestFormat, launchedInstanceId);
+        _responseBody = new MemoryStream();
+        _context = new DefaultHttpContext();
+        _context.Request.Method = HttpMethods.Post;
+        _context.Request.ContentType = FormContentType;
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(startRequest));
+        _context.Response.Body = _responseBody;
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var startDocument = XDocument.Load(_responseBody);
+        var startRootName = startDocument.Elements().Single().Name.LocalName;
+        var startedInstanceId = startDocument.Descendants().Single(element => element.Name.LocalName == "instanceId").Value;
+        var startedStateCode = startDocument.Descendants().Single(element => element.Name.LocalName == "code").Value;
+        var startedStateName = startDocument.Descendants().Single(element => element.Name.LocalName == "name").Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        Assert.That(startRootName, Is.EqualTo(StartInstancesResponseRootName));
+        Assert.That(startedInstanceId, Is.EqualTo(launchedInstanceId));
+        Assert.That(startedStateCode, Is.EqualTo(StateCodeRunning));
+        Assert.That(startedStateName, Is.EqualTo(StateNameRunning));
+        Assert.That(_daemon.LastStartedExistingContainerId, Is.EqualTo(FirstContainerId));
     }
 }

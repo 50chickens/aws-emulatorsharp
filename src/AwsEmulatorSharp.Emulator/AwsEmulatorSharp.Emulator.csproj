@@ -22,6 +22,7 @@
     <Content Include="..\..\config\ec2.json" Link="config\ec2.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\config\host.json" Link="config\host.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\config\identity.json" Link="config\identity.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\config\install.json" Link="config\install.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

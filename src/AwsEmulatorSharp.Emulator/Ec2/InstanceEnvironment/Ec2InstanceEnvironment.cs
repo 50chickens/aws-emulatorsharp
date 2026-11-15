@@ -25,7 +25,7 @@ public class Ec2InstanceEnvironment
         }
 
         var profile = instanceProfiles[instanceProfileName];
-        var profileEnvironment = environment.WithInstanceProfile(profile, _hostConfiguration.ListenerPort);
+        var profileEnvironment = environment.WithInstanceProfile(profile, _hostConfiguration);
 
         return profileEnvironment;
     }

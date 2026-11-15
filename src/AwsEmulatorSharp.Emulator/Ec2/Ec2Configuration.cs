@@ -2,6 +2,8 @@ namespace AwsEmulatorSharp.Emulator.Ec2;
 
 public class Ec2Configuration
 {
+    public required Ec2UserDataFailurePolicy UserDataFailurePolicy { get; set; }
+
     public required Dictionary<string, string> AmiToImage { get; set; }
 
     public required Ec2Region Region { get; set; }

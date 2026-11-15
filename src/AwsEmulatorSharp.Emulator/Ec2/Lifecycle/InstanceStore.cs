@@ -16,6 +16,7 @@ public class InstanceStore
     private const string TerminatedStateName = "terminated";
     private const int TerminatedStateCode = 48;
     private const int FirstBootCount = 1;
+    private const bool NoUserDataFailure = false;
 
     private readonly ConcurrentDictionary<string, Ec2Instance> _instances = new(StringComparer.Ordinal);
 
@@ -23,7 +24,7 @@ public class InstanceStore
     {
         var instanceId = InstanceIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
         var reservationId = ReservationIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
-        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, privateIpAddress, RunningStateName, RunningStateCode, FirstBootCount, string.Empty);
+        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, privateIpAddress, RunningStateName, RunningStateCode, FirstBootCount, string.Empty, NoUserDataFailure);
         _instances[instanceId] = instance;
 
         return instance;
@@ -35,6 +36,14 @@ public class InstanceStore
         _instances[instance.InstanceId] = recordedInstance;
 
         return recordedInstance;
+    }
+
+    public Ec2Instance RecordUserDataFailure(Ec2Instance instance)
+    {
+        var failedInstance = instance.WithUserDataFailure();
+        _instances[instance.InstanceId] = failedInstance;
+
+        return failedInstance;
     }
 
     public string ReadConsoleOutput(string instanceId)

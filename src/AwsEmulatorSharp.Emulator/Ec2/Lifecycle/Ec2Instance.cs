@@ -2,7 +2,7 @@ namespace AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
 
 public class Ec2Instance
 {
-    public Ec2Instance(string instanceId, string reservationId, string imageId, string instanceType, string containerId, string privateIpAddress, string stateName, int stateCode, int bootCount, string consoleOutput)
+    public Ec2Instance(string instanceId, string reservationId, string imageId, string instanceType, string containerId, string privateIpAddress, string stateName, int stateCode, int bootCount, string consoleOutput, bool userDataFailed)
     {
         InstanceId = instanceId;
         ReservationId = reservationId;
@@ -14,6 +14,7 @@ public class Ec2Instance
         StateCode = stateCode;
         BootCount = bootCount;
         ConsoleOutput = consoleOutput;
+        UserDataFailed = userDataFailed;
     }
 
     public string InstanceId { get; }
@@ -36,18 +37,25 @@ public class Ec2Instance
 
     public string ConsoleOutput { get; }
 
+    public bool UserDataFailed { get; }
+
     public Ec2Instance WithState(string stateName, int stateCode)
     {
-        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount, ConsoleOutput);
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount, ConsoleOutput, UserDataFailed);
     }
 
     public Ec2Instance Booted(string stateName, int stateCode)
     {
-        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount + 1, ConsoleOutput);
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, stateName, stateCode, BootCount + 1, ConsoleOutput, UserDataFailed);
     }
 
     public Ec2Instance WithConsoleOutput(string consoleOutput)
     {
-        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, StateName, StateCode, BootCount, consoleOutput);
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, StateName, StateCode, BootCount, consoleOutput, UserDataFailed);
+    }
+
+    public Ec2Instance WithUserDataFailure()
+    {
+        return new Ec2Instance(InstanceId, ReservationId, ImageId, InstanceType, ContainerId, PrivateIpAddress, StateName, StateCode, BootCount, ConsoleOutput, true);
     }
 }

@@ -20,6 +20,7 @@ public class RunInstancesOperation : IQueryOperation
     private const string RequestIdElementName = "requestId";
     private const string ReservationIdElementName = "reservationId";
     private const string InstancesSetElementName = "instancesSet";
+    private const int SuccessfulExitCode = 0;
 
     private readonly Ec2Configuration _configuration;
     private readonly InstanceStore _store;
@@ -56,11 +57,34 @@ public class RunInstancesOperation : IQueryOperation
         if (encodedUserData.Length > 0)
         {
             var script = encodedUserData.DecodeUserData();
-            var commandResult = _containers.RunPowerShellScript(instance.ContainerId, script);
-            _store.RecordConsoleOutput(instance, commandResult.StandardOutput);
+            instance = RunUserDataScript(instance, script);
         }
 
         await _writer.WriteAsync(context.Response, BuildDocument(instance));
+    }
+
+    private Ec2Instance RunUserDataScript(Ec2Instance instance, string script)
+    {
+        var commandResult = _containers.RunPowerShellScript(instance.ContainerId, script);
+        var recordedInstance = _store.RecordConsoleOutput(instance, commandResult.StandardOutput);
+        if (commandResult.ExitCode == SuccessfulExitCode)
+        {
+            return recordedInstance;
+        }
+
+        return ApplyUserDataFailurePolicy(recordedInstance);
+    }
+
+    private Ec2Instance ApplyUserDataFailurePolicy(Ec2Instance instance)
+    {
+        var policyTerminatesInstance = _configuration.UserDataFailurePolicy == Ec2UserDataFailurePolicy.Terminate;
+        if (policyTerminatesInstance)
+        {
+            _containers.Remove(instance.ContainerId);
+            return _store.Terminate(instance);
+        }
+
+        return _store.RecordUserDataFailure(instance);
     }
 
     private XDocument BuildDocument(Ec2Instance instance)

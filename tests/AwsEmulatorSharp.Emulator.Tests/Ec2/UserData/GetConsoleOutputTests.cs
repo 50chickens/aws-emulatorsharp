@@ -46,7 +46,7 @@ public class GetConsoleOutputTests
         var writer = new QueryResponseWriter(new WireConfiguration());
         var commandResult = new ContainerCommandResult(StandardOutput, StandardError, SuccessfulExitCode);
         var daemon = new InMemoryContainerDaemon(commandResult);
-        var containers = new ContainersSurface(daemon);
+        var containers = new ContainersSurface(daemon, new ContainersConfigurationReader().Read());
         var environment = new Ec2InstanceEnvironment(new IdentityConfigurationReader().Read(), new HostConfigurationReader().Read());
         var operations = new List<IQueryOperation>
         {

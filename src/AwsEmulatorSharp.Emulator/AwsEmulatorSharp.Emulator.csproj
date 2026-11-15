@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="..\..\config\containers.json" Link="config\containers.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\config\ec2.json" Link="config\ec2.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\config\host.json" Link="config\host.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\config\identity.json" Link="config\identity.json" CopyToOutputDirectory="PreserveNewest" />

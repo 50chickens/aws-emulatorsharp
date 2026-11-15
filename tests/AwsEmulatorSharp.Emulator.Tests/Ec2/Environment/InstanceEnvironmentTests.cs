@@ -57,7 +57,7 @@ public class InstanceEnvironmentTests
         var writer = new QueryResponseWriter(new WireConfiguration());
         var commandResult = new ContainerCommandResult(string.Empty, string.Empty, SuccessfulExitCode);
         _daemon = new InMemoryContainerDaemon(commandResult);
-        var containers = new ContainersSurface(_daemon);
+        var containers = new ContainersSurface(_daemon, new ContainersConfigurationReader().Read());
         var environment = new Ec2InstanceEnvironment(_identityConfiguration, _hostConfiguration);
         var identityStore = new IdentityStore(_identityConfiguration, TimeProvider.System);
         var operations = new List<IQueryOperation>

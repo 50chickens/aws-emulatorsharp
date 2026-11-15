@@ -1,5 +1,7 @@
 {
   "mediaBucketName": "installer-media",
   "mediaKeyPrefix": "installer/",
+  "reportingMediaKeyPrefix": "reporting/",
+  "reportServerDatabaseName": "ReportServer",
   "mediaFolderPath": "C:\\installer"
 }

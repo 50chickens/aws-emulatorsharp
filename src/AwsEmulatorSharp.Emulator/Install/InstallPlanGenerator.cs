@@ -9,7 +9,10 @@ public class InstallPlanGenerator
     private const string ObjectKeySeparator = "/";
     private const string QuietSwitch = "/Q";
     private const string IntegrationServicesFeature = "IS";
-    private const string SetupCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=Install /FEATURES={3} /IACCEPTSQLSERVERLICENSETERMS";
+    private const string DatabaseEngineStepName = "database-engine";
+    private const string ReportServerStepName = "report-server";
+    private const string DatabaseEngineCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=Install /FEATURES={3} /IACCEPTSQLSERVERLICENSETERMS";
+    private const string ReportServerCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS";
 
     private readonly IObjectStore _objectStore;
     private readonly MediaUrlMinter _mediaUrlMinter;
@@ -24,25 +27,35 @@ public class InstallPlanGenerator
 
     public InstallPlan For(Ec2Instance instance)
     {
-        var mediaObject = FindMediaObject();
-        var mediaUrl = _mediaUrlMinter.For(_configuration.MediaBucketName, mediaObject.Key);
-        var setupCommandLine = ToSetupCommandLine(mediaObject.Key);
+        var steps = new List<InstallStep> { ToDatabaseEngineStep(), ToReportServerStep() };
 
-        return new InstallPlan(instance.InstanceId, _configuration.MediaBucketName, mediaObject.Key, mediaUrl, setupCommandLine);
+        return new InstallPlan(instance.InstanceId, _configuration.MediaBucketName, steps);
     }
 
-    private StoredObject FindMediaObject()
+    private InstallStep ToDatabaseEngineStep()
     {
-        var mediaObjects = _objectStore.FindObjects(_configuration.MediaBucketName, _configuration.MediaKeyPrefix);
+        var installerKey = FindInstallerKey(_configuration.MediaKeyPrefix);
+        var installerFileName = installerKey.Split(ObjectKeySeparator).Last();
+        var installerUrl = _mediaUrlMinter.For(_configuration.MediaBucketName, installerKey);
+        var commandLine = string.Format(CultureInfo.InvariantCulture, DatabaseEngineCommandLineFormat, _configuration.MediaFolderPath, installerFileName, QuietSwitch, IntegrationServicesFeature);
 
-        return mediaObjects.Last();
+        return new InstallStep(DatabaseEngineStepName, installerKey, installerUrl, commandLine);
     }
 
-    private string ToSetupCommandLine(string mediaKey)
+    private ReportServerInstallStep ToReportServerStep()
     {
-        var mediaFileName = mediaKey.Split(ObjectKeySeparator).Last();
-        var setupCommandLine = string.Format(CultureInfo.InvariantCulture, SetupCommandLineFormat, _configuration.MediaFolderPath, mediaFileName, QuietSwitch, IntegrationServicesFeature);
+        var installerKey = FindInstallerKey(_configuration.ReportingMediaKeyPrefix);
+        var installerFileName = installerKey.Split(ObjectKeySeparator).Last();
+        var installerUrl = _mediaUrlMinter.For(_configuration.MediaBucketName, installerKey);
+        var commandLine = string.Format(CultureInfo.InvariantCulture, ReportServerCommandLineFormat, _configuration.MediaFolderPath, installerFileName, QuietSwitch);
 
-        return setupCommandLine;
+        return new ReportServerInstallStep(ReportServerStepName, installerKey, installerUrl, commandLine, _configuration.ReportServerDatabaseName);
+    }
+
+    private string FindInstallerKey(string mediaKeyPrefix)
+    {
+        var mediaObjects = _objectStore.FindObjects(_configuration.MediaBucketName, mediaKeyPrefix);
+
+        return mediaObjects.Last().Key;
     }
 }

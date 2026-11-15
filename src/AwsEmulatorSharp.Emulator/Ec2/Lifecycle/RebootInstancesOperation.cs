@@ -30,17 +30,9 @@ public class RebootInstancesOperation : IQueryOperation
     public async Task HandleAsync(HttpContext context, IFormCollection form)
     {
         var requestedInstanceIds = form.ReadValues(InstanceIdParameterPrefix);
-        var rebootedInstances = _store.Find(requestedInstanceIds).Select(RebootInstance).ToList();
+        var rebootedInstances = _store.Find(requestedInstanceIds).Select(instance => _store.Reboot(_containers, instance)).ToList();
 
         await _writer.WriteAsync(context.Response, BuildDocument(rebootedInstances));
-    }
-
-    private Ec2Instance RebootInstance(Ec2Instance instance)
-    {
-        _containers.Restart(instance.ContainerId);
-        var rebootedInstance = _store.Start(instance);
-
-        return rebootedInstance;
     }
 
     private XDocument BuildDocument(IReadOnlyList<Ec2Instance> instances)

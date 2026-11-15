@@ -65,8 +65,21 @@ public class RunInstancesOperation : IQueryOperation
 
     private Ec2Instance RunUserDataScript(Ec2Instance instance, string script)
     {
-        var commandResult = _containers.RunPowerShellScript(instance.ContainerId, script);
-        var recordedInstance = _store.RecordConsoleOutput(instance, commandResult.StandardOutput);
+        var launchedInstance = script.ToStages().Aggregate(instance, RunUserDataStage);
+
+        return launchedInstance;
+    }
+
+    private Ec2Instance RunUserDataStage(Ec2Instance instance, UserDataStage stage)
+    {
+        var commandResult = _containers.RunPowerShellScript(instance.ContainerId, stage.Script);
+        var consoleOutput = instance.ConsoleOutput.AppendOutput(commandResult.StandardOutput);
+        var recordedInstance = _store.RecordConsoleOutput(instance, consoleOutput);
+        if (stage.RequestsReboot)
+        {
+            return _store.Reboot(_containers, recordedInstance);
+        }
+
         if (commandResult.ExitCode == SuccessfulExitCode)
         {
             return recordedInstance;

@@ -9,16 +9,16 @@ public class InstanceStore
     private const string InstanceIdPrefix = "i-";
     private const string ReservationIdPrefix = "r-";
     private const int IdentifierLength = 17;
-    private const string PendingStateName = "pending";
-    private const int PendingStateCode = 0;
+    private const string RunningStateName = "running";
+    private const int RunningStateCode = 16;
 
     private readonly ConcurrentDictionary<string, Ec2Instance> _instances = new(StringComparer.Ordinal);
 
-    public Ec2Instance Launch(string imageId, string instanceType)
+    public Ec2Instance Launch(string imageId, string instanceType, string containerId)
     {
         var instanceId = InstanceIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
         var reservationId = ReservationIdPrefix + RandomNumberGenerator.GetHexString(IdentifierLength, true);
-        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, PendingStateName, PendingStateCode);
+        var instance = new Ec2Instance(instanceId, reservationId, imageId, instanceType, containerId, RunningStateName, RunningStateCode);
         _instances[instanceId] = instance;
 
         return instance;

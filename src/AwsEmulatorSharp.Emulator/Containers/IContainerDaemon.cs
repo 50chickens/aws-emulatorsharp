@@ -6,6 +6,8 @@ public interface IContainerDaemon
 
     bool IsRunning(string containerId);
 
+    string GetAddress(string containerId);
+
     ContainerCommandResult RunCommand(string containerId, IReadOnlyList<string> command);
 
     IReadOnlyList<string> FindContainerIds(string labelKey, string labelValue);

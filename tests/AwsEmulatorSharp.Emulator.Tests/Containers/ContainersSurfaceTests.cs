@@ -12,6 +12,7 @@ public class ContainersSurfaceTests
     private const string LabelValue = "task-1";
     private const string CommandName = "echo";
     private const string CommandArgument = "hello";
+    private const string FirstContainerAddress = "10.0.0.1";
     private const string StandardOutput = "hello";
     private const string StandardError = "warning";
     private const int ExitCode = 3;
@@ -37,6 +38,7 @@ public class ContainersSurfaceTests
         var container = _surface.Start(ImageReference, _labels);
 
         Assert.That(container.State, Is.EqualTo(ContainerState.Running));
+        Assert.That(container.Address, Is.EqualTo(FirstContainerAddress));
     }
 
     [Test]

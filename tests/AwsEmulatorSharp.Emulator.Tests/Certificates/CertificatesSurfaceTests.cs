@@ -23,8 +23,13 @@ public class CertificatesSurfaceTests
     private const string IssuedStatus = "ISSUED";
     private const string ResourceNotFoundErrorType = "ResourceNotFoundException";
     private const string ResponseContentType = "application/x-amz-json-1.1";
+    private const string CertificateFileName = "certificate.pem";
+    private const string ChainFileName = "chain.pem";
+    private const string PrivateKeyFileName = "private-key.pem";
+    private const string PfxFileName = "certificate.pfx";
 
     private AcmCertificateAuthority _authority;
+    private CertificateFileWriter _fileWriter;
     private CertificateStore _store;
     private CertificatesSurface _surface;
     private CertificatesRequestFactory _requestFactory;
@@ -38,9 +43,40 @@ public class CertificatesSurfaceTests
     [SetUp]
     public void SetUp()
     {
-        _store = new CertificateStore(_authority);
+        var configuration = new CertificatesConfigurationReader().Read();
+        _fileWriter = new CertificateFileWriter(configuration);
+        _store = new CertificateStore(_authority, _fileWriter);
         _surface = new CertificatesSurface(_store, new CertificatesResponseWriter());
         _requestFactory = new CertificatesRequestFactory();
+    }
+
+    [Test]
+    public async Task Test_That_We_Write_The_Files_An_Instance_Imports_When_We_Issue_A_Certificate()
+    {
+        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
+        await _surface.HandleAsync(requestCertificateContext);
+
+        var writtenFiles = Directory.GetFiles(_fileWriter.OutputFolder)
+            .Select(filePath => Path.GetFileName(filePath))
+            .ToList();
+
+        Assert.That(writtenFiles, Does.Contain(CertificateFileName));
+        Assert.That(writtenFiles, Does.Contain(ChainFileName));
+        Assert.That(writtenFiles, Does.Contain(PrivateKeyFileName));
+        Assert.That(writtenFiles, Does.Contain(PfxFileName));
+    }
+
+    [Test]
+    public async Task Test_That_The_Written_Pfx_Carries_A_Certificate_That_Chains_To_The_Emulator_Certificate_Authority()
+    {
+        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
+        await _surface.HandleAsync(requestCertificateContext);
+
+        using var certificate = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine(_fileWriter.OutputFolder, PfxFileName), null);
+        var certificateAuthority = File.ReadAllText(Path.Combine(_fileWriter.OutputFolder, ChainFileName)).ReadCertificates();
+
+        Assert.That(certificate.ChainsTo(certificateAuthority), Is.True);
+        Assert.That(certificate.HasPrivateKey, Is.True);
     }
 
     [Test]

@@ -10,11 +10,13 @@ public class CertificateStore
     private const int CertificateIdLength = 32;
 
     private readonly AcmCertificateAuthority _authority;
+    private readonly CertificateFileWriter _fileWriter;
     private readonly ConcurrentDictionary<string, AcmCertificate> _certificates = new(StringComparer.Ordinal);
 
-    public CertificateStore(AcmCertificateAuthority authority)
+    public CertificateStore(AcmCertificateAuthority authority, CertificateFileWriter fileWriter)
     {
         _authority = authority;
+        _fileWriter = fileWriter;
     }
 
     public AcmCertificate RequestCertificate(string domainName)
@@ -23,6 +25,7 @@ public class CertificateStore
         var certificateArn = string.Format(CultureInfo.InvariantCulture, CertificateArnFormat, certificateId);
         var certificate = _authority.Issue(certificateArn, domainName);
         _certificates[certificateArn] = certificate;
+        _fileWriter.Write(certificate);
 
         return certificate;
     }

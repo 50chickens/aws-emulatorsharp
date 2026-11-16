@@ -25,6 +25,9 @@ public class GetConsoleOutputTests
     private const string GetConsoleOutputResponseRootName = "GetConsoleOutputResponse";
     private const string InstanceIdElementName = "instanceId";
     private const string OutputElementName = "output";
+    private const string CodeElementName = "Code";
+    private const string UnknownInstanceId = "i-00000000000000000";
+    private const string InvalidInstanceIdNotFoundCode = "InvalidInstanceID.NotFound";
     private const string ScriptOutputLine = "Write-Output 'user-data-ran'";
     private const string StandardOutput = "user-data-ran";
     private const string StandardError = "user-data-warning";
@@ -127,5 +130,21 @@ public class GetConsoleOutputTests
 
         Assert.That(rootName, Is.EqualTo(GetConsoleOutputResponseRootName));
         Assert.That(consoleOutput, Is.EqualTo(EmptyOutput));
+    }
+
+    [Test]
+    public async Task Test_That_We_Can_Answer_A_Missing_Instance_Id_In_The_Error_Element_Shape()
+    {
+        var consoleOutputRequest = string.Format(CultureInfo.InvariantCulture, GetConsoleOutputRequestFormat, UnknownInstanceId);
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(consoleOutputRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var document = XDocument.Load(_responseBody);
+        var errorCode = document.Descendants().Single(element => element.Name.LocalName == CodeElementName).Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(errorCode, Is.EqualTo(InvalidInstanceIdNotFoundCode));
     }
 }

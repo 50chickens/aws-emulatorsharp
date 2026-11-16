@@ -1,8 +1,8 @@
 #requires -Version 7.0
 
 param(
-    [ValidateSet('all', 'build', 'test', 'installer')]
-    [string] $Check = 'all'
+    [ValidateSet('ci', 'all', 'build', 'test', 'installer')]
+    [string] $Check = 'ci'   # the required check name the orchestrator passes to run every stage
 )
 
 $ErrorActionPreference = 'Stop'
@@ -116,17 +116,17 @@ function Invoke-InstallerTest($configuration)
 $configuration = Get-Configuration
 $configuration = Add-RuntimeConfiguration $configuration
 
-if ($Check -in @('all', 'build'))
+if ($Check -in @('ci', 'all', 'build'))
 {
     Invoke-Build $configuration
 }
 
-if ($Check -in @('all', 'test'))
+if ($Check -in @('ci', 'all', 'test'))
 {
     Invoke-Test $configuration
 }
 
-if ($Check -in @('all', 'test', 'installer'))
+if ($Check -in @('ci', 'all', 'test', 'installer'))
 {
     Invoke-InstallerTest $configuration
 }

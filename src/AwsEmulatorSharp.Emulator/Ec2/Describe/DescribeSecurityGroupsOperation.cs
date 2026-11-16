@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Wire;
 using Microsoft.AspNetCore.Http;
@@ -8,6 +9,9 @@ public class DescribeSecurityGroupsOperation : IQueryOperation
 {
     private const string SecurityGroupsActionName = "DescribeSecurityGroups";
     private const string GroupIdParameterPrefix = "GroupId.";
+    private const string GroupNameParameterPrefix = "GroupName.";
+    private const string InvalidGroupNotFoundCode = "InvalidGroup.NotFound";
+    private const string GroupNotFoundMessageFormat = "The security group '{0}' does not exist";
     private const string ResponseRootElementName = "DescribeSecurityGroupsResponse";
     private const string RequestIdElementName = "requestId";
     private const string SecurityGroupInfoElementName = "securityGroupInfo";
@@ -31,14 +35,27 @@ public class DescribeSecurityGroupsOperation : IQueryOperation
     public async Task HandleAsync(HttpContext context, IFormCollection form)
     {
         var requestedGroupIds = form.ReadValues(GroupIdParameterPrefix);
+        var requestedGroupNames = form.ReadValues(GroupNameParameterPrefix);
+        var unknownGroupNames = requestedGroupNames
+            .Where(groupName => !_configuration.SecurityGroups.Any(group => group.GroupName == groupName))
+            .ToList();
 
-        await _writer.WriteAsync(context.Response, BuildDocument(requestedGroupIds));
+        if (unknownGroupNames.Count > 0)
+        {
+            var unknownGroupName = unknownGroupNames.First();
+            var message = string.Format(CultureInfo.InvariantCulture, GroupNotFoundMessageFormat, unknownGroupName);
+            await _writer.WriteErrorAsync(context.Response, InvalidGroupNotFoundCode, message);
+            return;
+        }
+
+        await _writer.WriteAsync(context.Response, BuildDocument(requestedGroupIds, requestedGroupNames));
     }
 
-    private XDocument BuildDocument(List<string> requestedGroupIds)
+    private XDocument BuildDocument(List<string> requestedGroupIds, List<string> requestedGroupNames)
     {
         var xmlNamespace = _writer.XmlNamespace;
-        var securityGroups = _configuration.SecurityGroups.SelectRequested(requestedGroupIds, group => group.GroupId);
+        var securityGroupsById = _configuration.SecurityGroups.SelectRequested(requestedGroupIds, group => group.GroupId);
+        var securityGroups = securityGroupsById.SelectRequested(requestedGroupNames, group => group.GroupName);
 
         return new XDocument(
             new XElement(xmlNamespace + ResponseRootElementName,

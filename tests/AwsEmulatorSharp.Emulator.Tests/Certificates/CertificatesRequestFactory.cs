@@ -24,7 +24,7 @@ internal class CertificatesRequestFactory
             [DomainNamePropertyName] = domainName
         };
 
-        var context = CreateRequest(RequestCertificateActionName, body);
+        var context = CreateRequest(TargetPrefix + RequestCertificateActionName, body);
 
         return context;
     }
@@ -52,7 +52,14 @@ internal class CertificatesRequestFactory
 
     internal DefaultHttpContext CreateListCertificatesRequest()
     {
-        var context = CreateRequest(ListCertificatesActionName, new JsonObject());
+        var context = CreateRequest(TargetPrefix + ListCertificatesActionName, new JsonObject());
+
+        return context;
+    }
+
+    internal DefaultHttpContext CreateRequestForAnotherService(string target)
+    {
+        var context = CreateRequest(target, new JsonObject());
 
         return context;
     }
@@ -64,19 +71,19 @@ internal class CertificatesRequestFactory
             [CertificateArnPropertyName] = certificateArn
         };
 
-        var context = CreateRequest(actionName, body);
+        var context = CreateRequest(TargetPrefix + actionName, body);
 
         return context;
     }
 
-    private DefaultHttpContext CreateRequest(string actionName, JsonObject body)
+    private DefaultHttpContext CreateRequest(string target, JsonObject body)
     {
         var content = Encoding.UTF8.GetBytes(body.ToJsonString());
         var context = new DefaultHttpContext();
         context.Request.Method = HttpMethods.Post;
         context.Request.Path = "/";
         context.Request.ContentType = RequestContentType;
-        context.Request.Headers[TargetHeaderName] = TargetPrefix + actionName;
+        context.Request.Headers[TargetHeaderName] = target;
         context.Request.Body = new MemoryStream(content);
         context.Request.ContentLength = content.Length;
         context.Response.Body = new MemoryStream();

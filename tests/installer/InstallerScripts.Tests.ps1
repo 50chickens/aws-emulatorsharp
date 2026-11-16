@@ -50,7 +50,7 @@ BeforeAll {
         $scriptPath         = "$caseRoot\install.ps1"
         $standardOutputPath = "$caseRoot\standard-output.txt"
         $standardErrorPath  = "$caseRoot\standard-error.txt"
-        $process = Start-Process -FilePath $powerShell -ArgumentList @('-NoProfile', '-File', $scriptPath) -Wait -PassThru -RedirectStandardOutput $standardOutputPath -RedirectStandardError $standardErrorPath
+        $process = Start-Process -FilePath $powerShell -ArgumentList @('-NoProfile', '-File', $scriptPath) -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput $standardOutputPath -RedirectStandardError $standardErrorPath
         $standardOutput = Get-Content -Path $standardOutputPath -Raw
         $standardError  = Get-Content -Path $standardErrorPath -Raw
         $result = [pscustomobject]@{

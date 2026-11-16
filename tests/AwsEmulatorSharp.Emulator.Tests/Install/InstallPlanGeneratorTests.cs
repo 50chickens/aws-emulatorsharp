@@ -34,8 +34,8 @@ public class InstallPlanGeneratorTests
     private const string PresignedUrlFormat = "{0}/{1}?X-Amz-Algorithm=AWS4-HMAC-SHA256";
     private const string EndpointFormat = "http://{0}:{1}/";
     private const string ExpectedDatabaseEngineCommandLineFormat = "\"{0}\\{1}\" /Q /ACTION=Install /FEATURES=SQLENGINE,FULLTEXT,IS,Conn,SDK /IACCEPTSQLSERVERLICENSETERMS";
-    private const string ExpectedReportServerCommandLineFormat = "\"{0}\\{1}\" /quiet /ACTION=INSTALL /INSTANCENAME=SSRS /EDITION=DEV /IAcceptLicenseTerms";
-    private const string ReportServerInstanceName = "SSRS";
+    private const string ExpectedReportServerCommandLineFormat = "\"{0}\\{1}\" /quiet Edition=DEV IAcceptLicenseTerms=True";
+    private const string ReportServerInstanceName = "PBIRS";
     private const string UrlFormat = "http://{0}{1}";
     private const string SignatureQueryName = "X-Amz-Signature=";
     private const string ExpectedSignature = "cc32958840dae4d681c3e35b12c157c5f44805ee22120cf5d272ef6c7abcd8ff";

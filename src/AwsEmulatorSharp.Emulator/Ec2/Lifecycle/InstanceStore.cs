@@ -46,6 +46,11 @@ public class InstanceStore
         return failedInstance;
     }
 
+    public bool Holds(string instanceId)
+    {
+        return _instances.ContainsKey(instanceId);
+    }
+
     public string ReadConsoleOutput(string instanceId)
     {
         var consoleOutput = _instances.TryGetValue(instanceId, out var instance) ? instance.ConsoleOutput : string.Empty;

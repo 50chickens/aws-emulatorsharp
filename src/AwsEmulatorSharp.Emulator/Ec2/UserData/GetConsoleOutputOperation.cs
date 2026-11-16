@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 using AwsEmulatorSharp.Emulator.Ec2.Lifecycle;
@@ -10,6 +11,8 @@ public class GetConsoleOutputOperation : IQueryOperation
 {
     private const string GetConsoleOutputActionName = "GetConsoleOutput";
     private const string InstanceIdParameterName = "InstanceId";
+    private const string InvalidInstanceIdNotFoundCode = "InvalidInstanceID.NotFound";
+    private const string InstanceNotFoundMessageFormat = "The instance ID '{0}' does not exist";
     private const string ResponseRootElementName = "GetConsoleOutputResponse";
     private const string RequestIdElementName = "requestId";
     private const string InstanceIdElementName = "instanceId";
@@ -29,6 +32,14 @@ public class GetConsoleOutputOperation : IQueryOperation
     public async Task HandleAsync(HttpContext context, IFormCollection form)
     {
         var instanceId = form[InstanceIdParameterName].ToString();
+
+        if (!_store.Holds(instanceId))
+        {
+            var message = string.Format(CultureInfo.InvariantCulture, InstanceNotFoundMessageFormat, instanceId);
+            await _writer.WriteErrorAsync(context.Response, InvalidInstanceIdNotFoundCode, message);
+            return;
+        }
+
         var consoleOutput = _store.ReadConsoleOutput(instanceId);
 
         await _writer.WriteAsync(context.Response, BuildDocument(instanceId, consoleOutput));

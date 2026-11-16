@@ -36,8 +36,12 @@ public class DescribeOperationsTests
     private const string SubnetAvailabilityZone = "us-east-1a";
     private const string SubnetIdFilterRequest = "Action=DescribeSubnets&SubnetId.1=subnet-0a1b2c3d4e5f60718";
     private const string UnknownSubnetIdRequest = "Action=DescribeSubnets&SubnetId.1=subnet-00000000000000000";
+    private const string GroupNameFilterRequest = "Action=DescribeSecurityGroups&GroupName.1=windows-launch";
+    private const string UnknownGroupNameRequest = "Action=DescribeSecurityGroups&GroupName.1=not-a-group";
+    private const string InvalidGroupNotFoundCode = "InvalidGroup.NotFound";
     private const string GroupId = "sg-0123456789abcdef0";
     private const string GroupName = "default";
+    private const string SecondGroupName = "windows-launch";
     private const string GroupDescription = "default VPC security group";
     private const string VpcId = "vpc-0123456789abcdef0";
     private const string SubnetState = "available";
@@ -251,6 +255,41 @@ public class DescribeOperationsTests
         Assert.That(groupName, Is.EqualTo(GroupName));
         Assert.That(groupDescription, Is.EqualTo(GroupDescription));
         Assert.That(vpcId, Is.EqualTo(VpcId));
+    }
+
+    [Test]
+    public async Task Test_That_We_Can_Select_A_Security_Group_By_Name()
+    {
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(GroupNameFilterRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var document = XDocument.Load(_responseBody);
+        var groupNames = document.Descendants()
+            .Where(element => element.Name.LocalName == "groupName")
+            .Select(element => element.Value)
+            .ToList();
+
+        Assert.That(groupNames, Has.Count.EqualTo(RequestedItemCount));
+        Assert.That(groupNames.First(), Is.EqualTo(SecondGroupName));
+    }
+
+    [Test]
+    public async Task Test_That_We_Can_Answer_An_Unknown_Security_Group_Name_In_The_Error_Element_Shape()
+    {
+        _context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(UnknownGroupNameRequest));
+
+        await _surface.HandleAsync(_context);
+
+        _responseBody.Position = 0;
+        var document = XDocument.Load(_responseBody);
+        var errorCode = document.Descendants().Single(element => element.Name.LocalName == "Code").Value;
+        var errorMessage = document.Descendants().Single(element => element.Name.LocalName == "Message").Value;
+
+        Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(errorCode, Is.EqualTo(InvalidGroupNotFoundCode));
+        Assert.That(errorMessage, Does.Contain("not-a-group"));
     }
 
     [Test]

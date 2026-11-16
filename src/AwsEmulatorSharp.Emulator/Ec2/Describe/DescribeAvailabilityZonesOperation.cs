@@ -15,6 +15,7 @@ public class DescribeAvailabilityZonesOperation : IQueryOperation
     private const string ZoneNameElementName = "zoneName";
     private const string ZoneStateElementName = "zoneState";
     private const string RegionNameElementName = "regionName";
+    private const string ZoneIdElementName = "zoneId";
 
     private readonly Ec2Configuration _configuration;
     private readonly QueryResponseWriter _writer;
@@ -46,6 +47,7 @@ public class DescribeAvailabilityZonesOperation : IQueryOperation
                     zones.Select(zone => new XElement(xmlNamespace + ItemElementName,
                         new XElement(xmlNamespace + ZoneNameElementName, zone.Name),
                         new XElement(xmlNamespace + ZoneStateElementName, zone.State),
-                        new XElement(xmlNamespace + RegionNameElementName, zone.RegionName))))));
+                        new XElement(xmlNamespace + RegionNameElementName, zone.RegionName),
+                        new XElement(xmlNamespace + ZoneIdElementName, zone.ZoneId))))));
     }
 }

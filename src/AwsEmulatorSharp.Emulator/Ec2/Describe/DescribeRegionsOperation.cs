@@ -15,6 +15,7 @@ public class DescribeRegionsOperation : IQueryOperation
     private const string ItemElementName = "item";
     private const string RegionNameElementName = "regionName";
     private const string RegionEndpointElementName = "regionEndpoint";
+    private const string OptInStatusElementName = "optInStatus";
 
     private readonly Ec2Configuration _configuration;
     private readonly QueryResponseWriter _writer;
@@ -55,6 +56,7 @@ public class DescribeRegionsOperation : IQueryOperation
                 new XElement(xmlNamespace + RegionInfoElementName,
                     new XElement(xmlNamespace + ItemElementName,
                         new XElement(xmlNamespace + RegionNameElementName, _configuration.Region.Name),
-                        new XElement(xmlNamespace + RegionEndpointElementName, _configuration.Region.Endpoint)))));
+                        new XElement(xmlNamespace + RegionEndpointElementName, _configuration.Region.Endpoint),
+                        new XElement(xmlNamespace + OptInStatusElementName, _configuration.Region.OptInStatus)))));
     }
 }

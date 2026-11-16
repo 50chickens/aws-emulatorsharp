@@ -5,4 +5,6 @@ public class Ec2Region
     public required string Name { get; set; }
 
     public required string Endpoint { get; set; }
+
+    public required string OptInStatus { get; set; }
 }

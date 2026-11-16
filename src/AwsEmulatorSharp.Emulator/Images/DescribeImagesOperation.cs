@@ -20,6 +20,8 @@ public class DescribeImagesOperation : IQueryOperation
     private const string ImageIdElementName = "imageId";
     private const string ImageLocationElementName = "imageLocation";
     private const string ImageStateElementName = "imageState";
+    private const string CreationDateElementName = "creationDate";
+    private const string OwnerIdElementName = "ownerId";
     private const string AvailableImageStateName = "available";
 
     private readonly Ec2Configuration _configuration;
@@ -68,6 +70,8 @@ public class DescribeImagesOperation : IQueryOperation
         return new XElement(xmlNamespace + ItemElementName,
             new XElement(xmlNamespace + ImageIdElementName, imageId),
             new XElement(xmlNamespace + ImageLocationElementName, _configuration.AmiToImage[imageId]),
-            new XElement(xmlNamespace + ImageStateElementName, AvailableImageStateName));
+            new XElement(xmlNamespace + ImageStateElementName, AvailableImageStateName),
+            new XElement(xmlNamespace + CreationDateElementName, _configuration.ImageCreationDate),
+            new XElement(xmlNamespace + OwnerIdElementName, _configuration.ImageOwnerId));
     }
 }

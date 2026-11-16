@@ -15,6 +15,7 @@ public class DescribeInstanceTypesOperation : IQueryOperation
     private const string InstanceTypeElementName = "instanceType";
     private const string CurrentGenerationElementName = "currentGeneration";
     private const string FreeTierEligibleElementName = "freeTierEligible";
+    private const string BurstablePerformanceSupportedElementName = "burstablePerformanceSupported";
     private const string VCpuInfoElementName = "vCpuInfo";
     private const string DefaultVCpusElementName = "defaultVCpus";
     private const string MemoryInfoElementName = "memoryInfo";
@@ -51,6 +52,7 @@ public class DescribeInstanceTypesOperation : IQueryOperation
                         new XElement(xmlNamespace + InstanceTypeElementName, instanceType.Name),
                         new XElement(xmlNamespace + CurrentGenerationElementName, instanceType.CurrentGeneration),
                         new XElement(xmlNamespace + FreeTierEligibleElementName, instanceType.FreeTierEligible),
+                        new XElement(xmlNamespace + BurstablePerformanceSupportedElementName, instanceType.BurstablePerformanceSupported),
                         new XElement(xmlNamespace + VCpuInfoElementName,
                             new XElement(xmlNamespace + DefaultVCpusElementName, instanceType.VCpuCount)),
                         new XElement(xmlNamespace + MemoryInfoElementName,

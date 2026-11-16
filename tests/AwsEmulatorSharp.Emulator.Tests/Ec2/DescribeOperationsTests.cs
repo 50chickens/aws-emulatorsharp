@@ -21,13 +21,17 @@ public class DescribeOperationsTests
     private const string DescribeSecurityGroupsRequest = "Action=DescribeSecurityGroups";
     private const string RegionName = "us-east-1";
     private const string RegionEndpoint = "ec2.us-east-1.amazonaws.com";
+    private const string RegionOptInStatus = "opt-in-not-required";
     private const string RegionNameFilter = "Action=DescribeRegions&RegionName.1=us-east-1";
     private const string UnknownRegionRequest = "Action=DescribeRegions&RegionName.1=not-a-region";
     private const string FirstZoneName = "us-east-1a";
     private const string SecondZoneName = "us-east-1b";
+    private const string FirstZoneId = "use1-az1";
+    private const string SecondZoneId = "use1-az2";
     private const string ZoneState = "available";
     private const string InstanceTypeName = "t3.micro";
     private const string SecondInstanceTypeName = "t3.medium";
+    private const string TrueXmlValue = "true";
     private const string KeyName = "emulator-key";
     private const string KeyFingerprint = "1f:2e:3d:4c:5b:6a:79:88:97:a6:b5:c4:d3:e2:f1:00:0f:1e:2d:3c";
     private const string KeyType = "rsa";
@@ -92,11 +96,13 @@ public class DescribeOperationsTests
         var rootName = document.Elements().Single().Name.LocalName;
         var regionName = document.Descendants().Single(element => element.Name.LocalName == "regionName").Value;
         var regionEndpoint = document.Descendants().Single(element => element.Name.LocalName == "regionEndpoint").Value;
+        var optInStatus = document.Descendants().Single(element => element.Name.LocalName == "optInStatus").Value;
 
         Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
         Assert.That(rootName, Is.EqualTo("DescribeRegionsResponse"));
         Assert.That(regionName, Is.EqualTo(RegionName));
         Assert.That(regionEndpoint, Is.EqualTo(RegionEndpoint));
+        Assert.That(optInStatus, Is.EqualTo(RegionOptInStatus));
     }
 
     [Test]
@@ -121,6 +127,10 @@ public class DescribeOperationsTests
             .Where(element => element.Name.LocalName == "regionName")
             .Select(element => element.Value)
             .ToList();
+        var zoneIds = document.Descendants()
+            .Where(element => element.Name.LocalName == "zoneId")
+            .Select(element => element.Value)
+            .ToList();
 
         Assert.That(rootName, Is.EqualTo("DescribeAvailabilityZonesResponse"));
         Assert.That(zoneNames, Has.Count.EqualTo(AvailabilityZoneCount));
@@ -128,6 +138,7 @@ public class DescribeOperationsTests
         Assert.That(zoneNames.Last(), Is.EqualTo(SecondZoneName));
         Assert.That(zoneStates.First(), Is.EqualTo(ZoneState));
         Assert.That(regionNames.First(), Is.EqualTo(RegionName));
+        Assert.That(zoneIds, Is.EqualTo(new[] { FirstZoneId, SecondZoneId }));
     }
 
     [Test]
@@ -146,6 +157,10 @@ public class DescribeOperationsTests
             .ToList();
         var defaultVCpus = document.Descendants().First(element => element.Name.LocalName == "defaultVCpus").Value;
         var sizeInMib = document.Descendants().First(element => element.Name.LocalName == "sizeInMiB").Value;
+        var burstablePerformanceSupported = document.Descendants()
+            .Where(element => element.Name.LocalName == "burstablePerformanceSupported")
+            .Select(element => element.Value)
+            .ToList();
 
         Assert.That(rootName, Is.EqualTo("DescribeInstanceTypesResponse"));
         Assert.That(instanceTypeNames, Has.Count.EqualTo(InstanceTypeCount));
@@ -153,6 +168,7 @@ public class DescribeOperationsTests
         Assert.That(instanceTypeNames.Last(), Is.EqualTo(SecondInstanceTypeName));
         Assert.That(defaultVCpus, Is.EqualTo(VCpuCount.ToString()));
         Assert.That(sizeInMib, Is.EqualTo(MemoryMib.ToString()));
+        Assert.That(burstablePerformanceSupported, Is.EqualTo(new[] { TrueXmlValue, TrueXmlValue }));
     }
 
     [Test]

@@ -3,20 +3,25 @@
   "amiToImage": {
     "ami-0123456789abcdef0": "mcr.microsoft.com/dotnet/framework/runtime:4.8.1-windowsservercore-ltsc2025"
   },
+  "imageCreationDate": "2024-01-01T00:00:00.000Z",
+  "imageOwnerId": "123456789012",
   "region": {
     "name": "us-east-1",
-    "endpoint": "ec2.us-east-1.amazonaws.com"
+    "endpoint": "ec2.us-east-1.amazonaws.com",
+    "optInStatus": "opt-in-not-required"
   },
   "availabilityZones": [
     {
       "name": "us-east-1a",
       "state": "available",
-      "regionName": "us-east-1"
+      "regionName": "us-east-1",
+      "zoneId": "use1-az1"
     },
     {
       "name": "us-east-1b",
       "state": "available",
-      "regionName": "us-east-1"
+      "regionName": "us-east-1",
+      "zoneId": "use1-az2"
     }
   ],
   "instanceTypes": [
@@ -25,14 +30,16 @@
       "vCpuCount": 2,
       "memoryMib": 1024,
       "currentGeneration": true,
-      "freeTierEligible": true
+      "freeTierEligible": true,
+      "burstablePerformanceSupported": true
     },
     {
       "name": "t3.medium",
       "vCpuCount": 2,
       "memoryMib": 4096,
       "currentGeneration": true,
-      "freeTierEligible": false
+      "freeTierEligible": false,
+      "burstablePerformanceSupported": true
     }
   ],
   "keyPairs": [

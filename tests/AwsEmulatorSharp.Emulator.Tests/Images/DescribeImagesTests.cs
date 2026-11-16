@@ -9,13 +9,15 @@ using NUnit.Framework;
 
 namespace AwsEmulatorSharp.Emulator.Tests.Images;
 
-[TimedTestFixture]
+[TimedTestFixture(1)]
 public class DescribeImagesTests
 {
     private const string FormContentType = "application/x-www-form-urlencoded";
     private const string DescribeImagesRequest = "Action=DescribeImages";
     private const string UnknownImageId = "ami-00000000000000000";
     private const string InvalidImageIdNotFoundCode = "InvalidAMIID.NotFound";
+    private const string ImageCreationDate = "2024-01-01T00:00:00.000Z";
+    private const string ImageOwnerId = "123456789012";
 
     private WireSurface _surface;
     private DefaultHttpContext _context;
@@ -61,11 +63,21 @@ public class DescribeImagesTests
             .Where(element => element.Name.LocalName == "imageLocation")
             .Select(element => element.Value)
             .ToList();
+        var creationDates = document.Descendants()
+            .Where(element => element.Name.LocalName == "creationDate")
+            .Select(element => element.Value)
+            .ToList();
+        var ownerIds = document.Descendants()
+            .Where(element => element.Name.LocalName == "ownerId")
+            .Select(element => element.Value)
+            .ToList();
 
         Assert.That(_context.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
         Assert.That(rootName, Is.EqualTo("DescribeImagesResponse"));
         Assert.That(imageIds, Is.EqualTo(_catalogue.Keys.ToList()));
         Assert.That(imageLocations, Is.EqualTo(_catalogue.Values.ToList()));
+        Assert.That(creationDates, Is.EqualTo(new[] { ImageCreationDate }));
+        Assert.That(ownerIds, Is.EqualTo(new[] { ImageOwnerId }));
     }
 
     [Test]

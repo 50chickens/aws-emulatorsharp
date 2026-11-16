@@ -7,4 +7,6 @@ public class Ec2AvailabilityZone
     public required string State { get; set; }
 
     public required string RegionName { get; set; }
+
+    public required string ZoneId { get; set; }
 }

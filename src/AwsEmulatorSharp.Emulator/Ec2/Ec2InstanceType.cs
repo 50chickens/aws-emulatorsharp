@@ -11,4 +11,6 @@ public class Ec2InstanceType
     public required bool CurrentGeneration { get; set; }
 
     public required bool FreeTierEligible { get; set; }
+
+    public required bool BurstablePerformanceSupported { get; set; }
 }

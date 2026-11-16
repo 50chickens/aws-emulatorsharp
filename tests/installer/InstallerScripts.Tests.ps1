@@ -1,7 +1,7 @@
 BeforeAll {
     $repositoryRoot = (Get-Item "$PSScriptRoot\..\..").FullName
     $installerRoot  = "$repositoryRoot\installer"
-    $workRoot       = "$PSScriptRoot\work"
+    $workRoot       = "$repositoryRoot\temporary_assets\installer-tests"
     $powerShellPath = (Get-Process -Id $PID).Path
     $expectedDatabaseEngineArguments = '/Q /ACTION=Install /FEATURES=SQLENGINE,FULLTEXT,IS,Conn,SDK /IACCEPTSQLSERVERLICENSETERMS'
     $expectedReportServerArguments   = '/quiet /ACTION=INSTALL /INSTANCENAME=SSRS /EDITION=Developer /IAcceptLicenseTerms'

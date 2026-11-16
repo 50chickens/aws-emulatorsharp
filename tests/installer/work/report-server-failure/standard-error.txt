@@ -1,5 +1,0 @@
-[31;1mException: [0mC:\git\internal\aws\aws-emulatorsharp\cursus\logs\agents\runs\m27-acm-request-form-01\worktree\tests\installer\work\report-server-failure\install.ps1:44[0m
-[31;1m[0m[36;1mLine |[0m
-[31;1m[0m[36;1m[36;1m  44 | [0m         [36;1mthrow "Report server installer failed with exit code $install[0m .[0m
-[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
-[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mReport server installer failed with exit code 7[0m

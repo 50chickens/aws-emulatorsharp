@@ -9,27 +9,33 @@ function Write-Log($message)
 
 function Get-Configuration
 {
-    $scriptFolder                 = (Get-Item ".").FullName
-    $settingsPath                 = "$scriptFolder\settings.json"
-    $settings                     = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json
-    $databaseServerName           = $settings.databaseServerName
-    $databaseName                 = $settings.databaseName
-    $reportServerVirtualDirectory = $settings.reportServerVirtualDirectory
-    $reportServerUrl              = $settings.reportServerUrl
-    $portalUrl                    = $settings.portalUrl
-    $connectionString             = "Data Source=$databaseServerName;Integrated Security=True"
-    $databaseConnectionArguments  = @{ ConnectionString = $connectionString }
-    $createDatabaseArguments      = @{ ConnectionString = $connectionString; ApplicationName = $databaseName }
-    $virtualDirectoryArguments    = @{ VirtualDirectory = $reportServerVirtualDirectory }
-    $reportServerUrlArguments     = @{ Application = 'ReportServerWeb'; Url = $reportServerUrl }
-    $portalUrlArguments           = @{ Application = 'ReportManager'; Url = $portalUrl }
+    $scriptFolder                = (Get-Item ".").FullName
+    $settingsPath                = "$scriptFolder\settings.json"
+    $settings                    = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json
+    $databaseServerName          = $settings.databaseServerName
+    $databaseName                = $settings.databaseName
+    $databaseCredentialsType     = $settings.databaseCredentialsType
+    $baseUrl                     = $settings.baseUrl
+    $applications                = $settings.applications
+    $connectionString            = "Data Source=$databaseServerName;Integrated Security=True"
+    $databaseConnectionArguments = @{ ConnectionString = $connectionString; CredentialsType = $databaseCredentialsType }
+    $createDatabaseArguments     = @{ ConnectionString = $connectionString; ApplicationName = $databaseName }
+    $virtualDirectoryCalls = @($applications | ForEach-Object {
+        [pscustomobject]@{
+            MethodName = 'SetVirtualDirectory'
+            Arguments  = @{ Application = $_.name; VirtualDirectory = $_.virtualDirectory }
+        }
+    })
+    $reservationCalls = @($applications | ForEach-Object {
+        [pscustomobject]@{
+            MethodName = 'ReserveUrl'
+            Arguments  = @{ Application = $_.name; Url = $baseUrl }
+        }
+    })
     $methodCalls = @(
         [pscustomobject]@{ MethodName = 'SetDatabaseConnection'; Arguments = $databaseConnectionArguments },
-        [pscustomobject]@{ MethodName = 'CreateDatabase'; Arguments = $createDatabaseArguments },
-        [pscustomobject]@{ MethodName = 'SetVirtualDirectory'; Arguments = $virtualDirectoryArguments },
-        [pscustomobject]@{ MethodName = 'ReserveUrl'; Arguments = $reportServerUrlArguments },
-        [pscustomobject]@{ MethodName = 'ReserveUrl'; Arguments = $portalUrlArguments }
-    )
+        [pscustomobject]@{ MethodName = 'CreateDatabase'; Arguments = $createDatabaseArguments }
+    ) + $virtualDirectoryCalls + $reservationCalls
 
     $configuration = $settings
     $configuration | Add-Member -NotePropertyName 'ConnectionString' -NotePropertyValue $connectionString -Force

@@ -6,5 +6,6 @@
   "reportServerDatabaseName": "ReportServer",
   "reportServerUrlPath": "/ReportServer",
   "portalUrlPath": "/Reports",
+  "reportServerInstanceName": "PBIRS",
   "mediaFolderPath": "C:\\installer"
 }

@@ -5,7 +5,7 @@ BeforeAll {
     $powerShellPath = (Get-Process -Id $PID).Path
     $expectedDatabaseEngineArguments = '/Q /ACTION=Install /FEATURES=SQLENGINE,FULLTEXT,IS,Conn,SDK /IACCEPTSQLSERVERLICENSETERMS'
     $expectedReportServerArguments   = '/quiet /ACTION=INSTALL /INSTANCENAME=SSRS /EDITION=Developer /IAcceptLicenseTerms'
-    $expectedMethodOrder             = @('SetDatabaseConnection', 'CreateDatabase', 'SetVirtualDirectory', 'ReserveUrl', 'ReserveUrl')
+    $expectedMethodOrder             = @('SetDatabaseConnection', 'CreateDatabase', 'SetVirtualDirectory', 'SetVirtualDirectory', 'ReserveUrl', 'ReserveUrl')
 
     function Get-ScriptAst($scriptPath)
     {
@@ -179,7 +179,7 @@ Describe 'Report server configuration script' {
         $receivedMethodNames = & $module { $script:receivedMethodNames }
         $expectedOrderText   = $expectedMethodOrder -join ','
         $receivedOrderText   = $receivedMethodNames -join ','
-        $configuration.instanceName | Should -Be 'SSRS'
+        $configuration.instanceName | Should -Be 'PBIRS'
         $receivedOrderText | Should -Be $expectedOrderText
     }
 

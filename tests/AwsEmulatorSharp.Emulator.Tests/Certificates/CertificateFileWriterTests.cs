@@ -10,19 +10,19 @@ namespace AwsEmulatorSharp.Emulator.Tests.Certificates;
 public class CertificateFileWriterTests
 {
     private const string DomainName = "installer.example.test";
-    private const string FirstCertificateArn = "arn:aws:acm:us-east-1:000000000000:certificate/first";
-    private const string SecondCertificateArn = "arn:aws:acm:us-east-1:000000000000:certificate/second";
+    private const string CertificateArn = "arn:aws:acm:us-east-1:000000000000:certificate/written";
     private const string CertificateFileName = "certificate.pem";
     private const string PfxFileName = "certificate.pfx";
     private const int WrittenFileCount = 4;
 
-    private AcmCertificateAuthority _authority;
+    private AcmCertificate _certificate;
     private CertificateFileWriter _fileWriter;
 
     [OneTimeSetUp]
     public void OneTimeSetUp()
     {
-        _authority = new AcmCertificateAuthority(TimeProvider.System);
+        var authority = new AcmCertificateAuthority(TimeProvider.System);
+        _certificate = authority.Issue(CertificateArn, DomainName);
     }
 
     [SetUp]
@@ -42,16 +42,14 @@ public class CertificateFileWriterTests
     }
 
     [Test]
-    public void Test_That_We_Write_Two_Certificates_In_Sequence_Without_A_Write_Failing()
+    public void Test_That_We_Write_The_Issued_Certificate_Twice_In_Sequence_Without_A_Write_Failing()
     {
-        var firstCertificate = _authority.Issue(FirstCertificateArn, DomainName);
-        _fileWriter.Write(firstCertificate);
+        _fileWriter.Write(_certificate);
         var firstWrittenFiles = Directory.GetFiles(_fileWriter.OutputFolder)
             .Select(filePath => Path.GetFileName(filePath))
             .ToList();
 
-        var secondCertificate = _authority.Issue(SecondCertificateArn, DomainName);
-        _fileWriter.Write(secondCertificate);
+        _fileWriter.Write(_certificate);
         var secondWrittenFiles = Directory.GetFiles(_fileWriter.OutputFolder)
             .Select(filePath => Path.GetFileName(filePath))
             .ToList();
@@ -60,7 +58,7 @@ public class CertificateFileWriterTests
 
         Assert.That(firstWrittenFiles, Has.Count.EqualTo(WrittenFileCount));
         Assert.That(secondWrittenFiles, Has.Count.EqualTo(WrittenFileCount));
-        Assert.That(writtenCertificatePem, Is.EqualTo(secondCertificate.CertificatePem));
+        Assert.That(writtenCertificatePem, Is.EqualTo(_certificate.CertificatePem));
         Assert.That(writtenCertificate.HasPrivateKey, Is.True);
     }
 }

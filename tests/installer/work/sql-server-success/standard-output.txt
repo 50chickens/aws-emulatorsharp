@@ -1,0 +1,2 @@
+[2026-11-16 14:08:58] Installing SQL Server 2025 from C:\git\internal\aws\aws-emulatorsharp\cursus\logs\agents\runs\m27-acm-request-form-01\worktree\tests\installer\work\sql-server-success\media\setup.cmd
+[2026-11-16 14:08:58] Installer exited with 0

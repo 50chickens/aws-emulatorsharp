@@ -1,0 +1,2 @@
+[2026-11-16 14:09:00] Installing the report server bundle from C:\git\internal\aws\aws-emulatorsharp\cursus\logs\agents\runs\m27-acm-request-form-01\worktree\tests\installer\work\report-server-failure\media\PowerBIReportServer.cmd
+[2026-11-16 14:09:01] Installer exited with 7

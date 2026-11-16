@@ -1,0 +1,5 @@
+[31;1mException: [0mC:\git\internal\aws\aws-emulatorsharp\cursus\logs\agents\runs\m27-acm-request-form-01\worktree\tests\installer\work\sql-server-failure\install.ps1:41[0m
+[31;1m[0m[36;1mLine |[0m
+[31;1m[0m[36;1m[36;1m  41 | [0m         [36;1mthrow "SQL Server installer failed with exit code $installerE[0m .[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mSQL Server installer failed with exit code 3[0m

@@ -29,10 +29,17 @@ public class CertificatesSurface
         _writer = writer;
     }
 
+    public bool CanHandle(HttpContext context)
+    {
+        var target = context.Request.Headers[TargetHeaderName].ToString();
+
+        return target.StartsWith(TargetPrefix, StringComparison.Ordinal);
+    }
+
     public async Task HandleAsync(HttpContext context)
     {
         var target = context.Request.Headers[TargetHeaderName].ToString();
-        var action = target.StartsWith(TargetPrefix, StringComparison.Ordinal) ? target[TargetPrefix.Length..] : target;
+        var action = target[TargetPrefix.Length..];
 
         switch (action)
         {

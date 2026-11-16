@@ -20,7 +20,7 @@ module extension under `src/AwsEmulatorSharp.Emulator`.
 | Secrets Manager | JSON target | `config/secrets.json` |
 | Identity | query API | `config/identity.json` |
 | Containers | docker command line | `config/containers.json` |
-| Certificates | `CertificateManager` JSON requests answered by `src/AwsEmulatorSharp.Emulator/Certificates`: `RequestCertificate`, `DescribeCertificate`, `GetCertificate`, `ListCertificates`, `DeleteCertificate`. `RequestCertificate` writes `certificate.pem`, `chain.pem`, `private-key.pem` and `certificate.pfx` into the `outputFolder` that `config/certificates.json` names | `config/certificates.json` |
+| Certificates | `CertificateManager` JSON requests answered by `src/AwsEmulatorSharp.Emulator/Certificates`: `RequestCertificate`, `DescribeCertificate`, `GetCertificate`, `ListCertificates`, `DeleteCertificate`. `RequestCertificate` writes `certificate.pem`, `chain.pem`, `private-key.pem` and `certificate.pfx` into a folder named for the process that answers, under the `outputFolder` that `config/certificates.json` names | `config/certificates.json` |
 | Install plan | generated per instance | `config/install.json` |
 
 ## 3 Container-backed instances

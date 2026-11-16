@@ -205,3 +205,10 @@ Describe 'Report server configuration script' {
         $receivedOrderText | Should -Be 'CreateDatabase,CreateDatabase'
     }
 }
+
+AfterAll {
+    if (Test-Path $workRoot)
+    {
+        Remove-Item -Path $workRoot -Recurse -Force
+    }
+}

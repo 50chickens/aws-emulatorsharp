@@ -1,7 +1,7 @@
 BeforeAll {
     $repositoryRoot = (Get-Item "$PSScriptRoot\..\..").FullName
     $installerRoot  = "$repositoryRoot\installer"
-    $workRoot       = "$PSScriptRoot\work"
+    $workRoot       = "$repositoryRoot\temporary_assets\installer-tests"
     $powerShellPath = (Get-Process -Id $PID).Path
     $expectedDatabaseEngineArguments = '/Q /ACTION=Install /FEATURES=SQLENGINE,FULLTEXT,IS,Conn,SDK /IACCEPTSQLSERVERLICENSETERMS'
     $expectedReportServerArguments   = '/quiet /ACTION=INSTALL /INSTANCENAME=SSRS /EDITION=Developer /IAcceptLicenseTerms'
@@ -203,5 +203,12 @@ Describe 'Report server configuration script' {
         $receivedMethodNames = & $module { $script:receivedMethodNames }
         $receivedOrderText   = $receivedMethodNames -join ','
         $receivedOrderText | Should -Be 'CreateDatabase,CreateDatabase'
+    }
+}
+
+AfterAll {
+    if (Test-Path $workRoot)
+    {
+        Remove-Item -Path $workRoot -Recurse -Force
     }
 }

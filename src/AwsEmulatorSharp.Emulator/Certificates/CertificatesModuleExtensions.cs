@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AwsEmulatorSharp.Emulator.Certificates;
@@ -17,5 +18,12 @@ public static class CertificatesModuleExtensions
         services.AddSingleton<CertificatesSurface>();
 
         return services;
+    }
+
+    public static IApplicationBuilder UseCertificatesModule(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<CertificatesRequestMiddleware>();
+
+        return app;
     }
 }

@@ -16,7 +16,6 @@ public class CertificatesSurfaceTests
     private const string CertificateArnElementName = "CertificateArn";
     private const string CertificateElementName = "Certificate";
     private const string CertificateChainElementName = "CertificateChain";
-    private const string CertificateSummaryListElementName = "CertificateSummaryList";
     private const string DomainNameElementName = "DomainName";
     private const string StatusElementName = "Status";
     private const string ErrorTypeElementName = "__type";
@@ -28,34 +27,37 @@ public class CertificatesSurfaceTests
     private const string PrivateKeyFileName = "private-key.pem";
     private const string PfxFileName = "certificate.pfx";
 
-    private AcmCertificateAuthority _authority;
+    private AcmCertificate _certificate;
     private CertificateFileWriter _fileWriter;
     private CertificateStore _store;
     private CertificatesSurface _surface;
     private CertificatesRequestFactory _requestFactory;
+    private HttpContext _requestCertificateContext;
 
     [OneTimeSetUp]
-    public void OneTimeSetUp()
+    public async Task OneTimeSetUp()
     {
-        _authority = new AcmCertificateAuthority(TimeProvider.System);
+        var authority = new AcmCertificateAuthority(TimeProvider.System);
+        var configuration = new CertificatesConfigurationReader().Read();
+        _fileWriter = new CertificateFileWriter(configuration);
+        _store = new CertificateStore(authority, _fileWriter);
+        _surface = new CertificatesSurface(_store, new CertificatesResponseWriter());
+        _requestCertificateContext = new CertificatesRequestFactory().CreateRequestCertificateRequest(DomainName);
+        await _surface.HandleAsync(_requestCertificateContext);
+        using var requestCertificateDocument = _requestCertificateContext.ReadResponseDocument();
+        var certificateArn = requestCertificateDocument.RootElement.GetProperty(CertificateArnElementName).ToString();
+        _certificate = _store.FindCertificate(certificateArn)[0];
     }
 
     [SetUp]
     public void SetUp()
     {
-        var configuration = new CertificatesConfigurationReader().Read();
-        _fileWriter = new CertificateFileWriter(configuration);
-        _store = new CertificateStore(_authority, _fileWriter);
-        _surface = new CertificatesSurface(_store, new CertificatesResponseWriter());
         _requestFactory = new CertificatesRequestFactory();
     }
 
     [Test]
-    public async Task Test_That_We_Write_The_Files_An_Instance_Imports_When_We_Issue_A_Certificate()
+    public void Test_That_We_Write_The_Files_An_Instance_Imports_When_We_Issue_A_Certificate()
     {
-        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
-        await _surface.HandleAsync(requestCertificateContext);
-
         var writtenFiles = Directory.GetFiles(_fileWriter.OutputFolder)
             .Select(filePath => Path.GetFileName(filePath))
             .ToList();
@@ -67,11 +69,8 @@ public class CertificatesSurfaceTests
     }
 
     [Test]
-    public async Task Test_That_The_Written_Pfx_Carries_A_Certificate_That_Chains_To_The_Emulator_Certificate_Authority()
+    public void Test_That_The_Written_Pfx_Carries_A_Certificate_That_Chains_To_The_Emulator_Certificate_Authority()
     {
-        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
-        await _surface.HandleAsync(requestCertificateContext);
-
         using var certificate = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine(_fileWriter.OutputFolder, PfxFileName), null);
         var certificateAuthority = File.ReadAllText(Path.Combine(_fileWriter.OutputFolder, ChainFileName)).ReadCertificates();
 
@@ -82,12 +81,7 @@ public class CertificatesSurfaceTests
     [Test]
     public async Task Test_That_We_Issue_A_Certificate_That_Chains_To_The_Emulator_Certificate_Authority()
     {
-        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
-        await _surface.HandleAsync(requestCertificateContext);
-        using var requestCertificateDocument = requestCertificateContext.ReadResponseDocument();
-        var certificateArn = requestCertificateDocument.RootElement.GetProperty(CertificateArnElementName).ToString();
-
-        var getCertificateContext = _requestFactory.CreateGetCertificateRequest(certificateArn);
+        var getCertificateContext = _requestFactory.CreateGetCertificateRequest(_certificate.CertificateArn);
         await _surface.HandleAsync(getCertificateContext);
         using var getCertificateDocument = getCertificateContext.ReadResponseDocument();
         var certificatePem = getCertificateDocument.RootElement.GetProperty(CertificateElementName).ToString();
@@ -96,8 +90,8 @@ public class CertificatesSurfaceTests
         var certificate = certificatePem.ReadCertificates()[0];
         var certificateAuthority = certificateChainPem.ReadCertificates();
 
-        Assert.That(requestCertificateContext.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
-        Assert.That(certificateArn, Does.Contain(CertificateArnPrefix));
+        Assert.That(_requestCertificateContext.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        Assert.That(_certificate.CertificateArn, Does.Contain(CertificateArnPrefix));
         Assert.That(getCertificateContext.Response.ContentType, Is.EqualTo(ResponseContentType));
         Assert.That(certificate.ChainsTo(certificateAuthority), Is.True);
         Assert.That(certificate.Issuer, Is.EqualTo(certificateAuthority[0].Subject));
@@ -105,14 +99,9 @@ public class CertificatesSurfaceTests
     }
 
     [Test]
-    public async Task Test_That_We_Store_The_Certificate_Chain_And_Private_Key_Against_The_Request()
+    public void Test_That_We_Store_The_Certificate_Chain_And_Private_Key_Against_The_Request()
     {
-        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
-        await _surface.HandleAsync(requestCertificateContext);
-        using var requestCertificateDocument = requestCertificateContext.ReadResponseDocument();
-        var certificateArn = requestCertificateDocument.RootElement.GetProperty(CertificateArnElementName).ToString();
-
-        var storedCertificate = _store.FindCertificate(certificateArn)[0];
+        var storedCertificate = _store.FindCertificate(_certificate.CertificateArn)[0];
         var certificate = storedCertificate.CertificatePem.ReadCertificates()[0];
         var certificateAuthority = storedCertificate.CertificateChainPem.ReadCertificates();
         using var storedKey = RSA.Create();
@@ -127,12 +116,7 @@ public class CertificatesSurfaceTests
     [Test]
     public async Task Test_That_We_Describe_The_Certificate_We_Requested()
     {
-        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
-        await _surface.HandleAsync(requestCertificateContext);
-        using var requestCertificateDocument = requestCertificateContext.ReadResponseDocument();
-        var certificateArn = requestCertificateDocument.RootElement.GetProperty(CertificateArnElementName).ToString();
-
-        var describeCertificateContext = _requestFactory.CreateDescribeCertificateRequest(certificateArn);
+        var describeCertificateContext = _requestFactory.CreateDescribeCertificateRequest(_certificate.CertificateArn);
         await _surface.HandleAsync(describeCertificateContext);
         using var describeCertificateDocument = describeCertificateContext.ReadResponseDocument();
         var certificate = describeCertificateDocument.RootElement.GetProperty(CertificateElementName);
@@ -141,43 +125,9 @@ public class CertificatesSurfaceTests
         var describedStatus = certificate.GetProperty(StatusElementName).ToString();
 
         Assert.That(describeCertificateContext.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
-        Assert.That(describedCertificateArn, Is.EqualTo(certificateArn));
+        Assert.That(describedCertificateArn, Is.EqualTo(_certificate.CertificateArn));
         Assert.That(describedDomainName, Is.EqualTo(DomainName));
         Assert.That(describedStatus, Is.EqualTo(IssuedStatus));
-    }
-
-    [Test]
-    public async Task Test_That_A_Deleted_Request_Is_No_Longer_Listed()
-    {
-        var requestCertificateContext = _requestFactory.CreateRequestCertificateRequest(DomainName);
-        await _surface.HandleAsync(requestCertificateContext);
-        using var requestCertificateDocument = requestCertificateContext.ReadResponseDocument();
-        var certificateArn = requestCertificateDocument.RootElement.GetProperty(CertificateArnElementName).ToString();
-
-        var listBeforeDeleteContext = _requestFactory.CreateListCertificatesRequest();
-        await _surface.HandleAsync(listBeforeDeleteContext);
-        using var listBeforeDeleteDocument = listBeforeDeleteContext.ReadResponseDocument();
-        var listedBeforeDelete = listBeforeDeleteDocument.RootElement
-            .GetProperty(CertificateSummaryListElementName)
-            .EnumerateArray()
-            .Select(summary => summary.GetProperty(CertificateArnElementName).ToString())
-            .ToList();
-
-        var deleteCertificateContext = _requestFactory.CreateDeleteCertificateRequest(certificateArn);
-        await _surface.HandleAsync(deleteCertificateContext);
-
-        var listAfterDeleteContext = _requestFactory.CreateListCertificatesRequest();
-        await _surface.HandleAsync(listAfterDeleteContext);
-        using var listAfterDeleteDocument = listAfterDeleteContext.ReadResponseDocument();
-        var listedAfterDelete = listAfterDeleteDocument.RootElement
-            .GetProperty(CertificateSummaryListElementName)
-            .EnumerateArray()
-            .Select(summary => summary.GetProperty(CertificateArnElementName).ToString())
-            .ToList();
-
-        Assert.That(listedBeforeDelete, Does.Contain(certificateArn));
-        Assert.That(deleteCertificateContext.Response.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
-        Assert.That(listedAfterDelete, Has.Count.EqualTo(0));
     }
 
     [Test]

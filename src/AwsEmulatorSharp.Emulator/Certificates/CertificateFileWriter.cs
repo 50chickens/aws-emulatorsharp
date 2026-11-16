@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
 
 namespace AwsEmulatorSharp.Emulator.Certificates;
@@ -11,7 +12,8 @@ public class CertificateFileWriter
 
     public CertificateFileWriter(CertificatesConfiguration configuration)
     {
-        OutputFolder = Path.Combine(AppContext.BaseDirectory, configuration.OutputFolder);
+        var processFolderName = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
+        OutputFolder = Path.Combine(AppContext.BaseDirectory, configuration.OutputFolder, processFolderName);
     }
 
     public string OutputFolder { get; }

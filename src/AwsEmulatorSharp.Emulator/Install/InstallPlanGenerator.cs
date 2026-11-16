@@ -10,11 +10,11 @@ public class InstallPlanGenerator
     private const string SetupQuietSwitch = "/Q";
     private const string ReportServerQuietSwitch = "/quiet";
     private const string DatabaseEngineFeatures = "SQLENGINE,FULLTEXT,IS,Conn,SDK";
-    private const string ReportServerInstanceName = "SSRS";
+    private const string ReportServerInstanceName = "PBIRS";
     private const string DatabaseEngineStepName = "database-engine";
     private const string ReportServerStepName = "report-server";
     private const string DatabaseEngineCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=Install /FEATURES={3} /IACCEPTSQLSERVERLICENSETERMS";
-    private const string ReportServerCommandLineFormat = "\"{0}\\{1}\" {2} /ACTION=INSTALL /INSTANCENAME={3} /EDITION={4} /IAcceptLicenseTerms";
+    private const string ReportServerCommandLineFormat = "\"{0}\\{1}\" {2} Edition={3} IAcceptLicenseTerms=True";
     private const string UrlFormat = "http://{0}{1}";
 
     private readonly IObjectStore _objectStore;
@@ -52,7 +52,7 @@ public class InstallPlanGenerator
         var installerKey = FindInstallerKey(_configuration.ReportingMediaKeyPrefix);
         var installerFileName = installerKey.Split(ObjectKeySeparator).Last();
         var installerUrl = _mediaUrlMinter.For(_configuration.MediaBucketName, installerKey);
-        var commandLine = string.Format(CultureInfo.InvariantCulture, ReportServerCommandLineFormat, _configuration.MediaFolderPath, installerFileName, ReportServerQuietSwitch, ReportServerInstanceName, _configuration.ReportServerEdition);
+        var commandLine = string.Format(CultureInfo.InvariantCulture, ReportServerCommandLineFormat, _configuration.MediaFolderPath, installerFileName, ReportServerQuietSwitch, _configuration.ReportServerEdition);
 
         return new ReportServerInstallStep(ReportServerStepName, installerKey, installerUrl, commandLine, ReportServerInstanceName, _configuration.ReportServerDatabaseName);
     }

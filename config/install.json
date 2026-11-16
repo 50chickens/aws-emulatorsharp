@@ -2,7 +2,7 @@
   "mediaBucketName": "installer-media",
   "mediaKeyPrefix": "installer/",
   "reportingMediaKeyPrefix": "reporting/",
-  "reportServerEdition": "Developer",
+  "reportServerEdition": "DEV",
   "reportServerDatabaseName": "ReportServer",
   "reportServerUrlPath": "/ReportServer",
   "portalUrlPath": "/Reports",

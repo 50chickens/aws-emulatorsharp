@@ -9,9 +9,9 @@ the local machine, so no AWS account is part of the test.
 ## 2 Surfaces
 
 The host reads `config/host.json`, `config/ec2.json`, `config/s3.json`, `config/secrets.json`,
-`config/identity.json`, `config/containers.json`, `config/images.json`, `config/auth.json` and
-`config/install.json` at start-up. Each surface is registered by its module extension under
-`src/AwsEmulatorSharp.Emulator`.
+`config/identity.json`, `config/containers.json`, `config/images.json`, `config/auth.json`,
+`config/certificates.json` and `config/install.json` at start-up. Each surface is registered by its
+module extension under `src/AwsEmulatorSharp.Emulator`.
 
 | Surface | Request form | Configuration |
 | --- | --- | --- |
@@ -20,6 +20,7 @@ The host reads `config/host.json`, `config/ec2.json`, `config/s3.json`, `config/
 | Secrets Manager | JSON target | `config/secrets.json` |
 | Identity | query API | `config/identity.json` |
 | Containers | docker command line | `config/containers.json` |
+| Certificates | `CertificateManager` JSON requests answered by `src/AwsEmulatorSharp.Emulator/Certificates`: `RequestCertificate`, `DescribeCertificate`, `GetCertificate`, `ListCertificates`, `DeleteCertificate`. `RequestCertificate` writes `certificate.pem`, `chain.pem`, `private-key.pem` and `certificate.pfx` into the `outputFolder` that `config/certificates.json` names | `config/certificates.json` |
 | Install plan | generated per instance | `config/install.json` |
 
 ## 3 Container-backed instances

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ProjectsForNuGetPackaging Include="src/AwsEmulatorSharp.Host/AwsEmulatorSharp.Host.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectForDeployment Include="AwsEmulatorSharp.Host" />
+  </ItemGroup>
+</Project>

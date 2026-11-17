@@ -1,5 +1,0 @@
-{
-  "mediaFolderPath": "C:\\installer",
-  "installerFileName": "setup.exe",
-  "features": "SQLENGINE,FULLTEXT,IS,Conn,SDK"
-}

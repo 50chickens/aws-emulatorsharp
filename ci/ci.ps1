@@ -1,134 +1,139 @@
 #requires -Version 7.0
+<#
+.SYNOPSIS
+    Runs every enabled build step in pipeline order.
+
+.DESCRIPTION
+    The build step list below is the pipeline. An entry that is absent does not run, and an entry
+    whose Enabled is false does not run, so a run never has to be told which steps it meant.
+
+    The selected environment config is copied over the generated working copy before any step
+    runs. Every build step reads only the generated copy, so no build step knows an environment
+    name and two environments cannot disagree about which file was read.
+
+    The release and image steps of the pipeline skill do not apply here: this host is consumed as a
+    package from the shared feed, and nothing installs it as a folder set or hosts it under docker.
+#>
 
 param(
-    [ValidateSet('ci', 'all', 'build', 'test', 'installer')]
-    [string] $Check = 'ci'   # the required check name the orchestrator passes to run every stage
+    [string]$Environment = '.local'
 )
 
 $ErrorActionPreference = 'Stop'
 $VerbosePreference     = 'SilentlyContinue'
 Set-Location $PSScriptRoot
 
-function Write-Log($message)
+Get-ChildItem -Path '.\host\includes' -Filter '*.ps1' |% { . $_.FullName }
+
+function Get-Configuration($environment)
 {
-    $stamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
-    Write-Host "[$stamp] $message"
-}
+    $ciRoot = (Get-Item '.').FullName
+    $configName = 'AwsEmulatorSharp'
+    $configPath = "$ciRoot\configs\$configName$environment.json"
+    $generatedConfigFolder = "$ciRoot\host\configs"
+    $generatedConfigPath = "$generatedConfigFolder\$configName.json"
+    $deploymentRoot = "$ciRoot\host\deployment"
 
-function Get-Configuration
-{
-    $repositoryRoot       = (Get-Item '..').FullName
-    $solutionFolder       = "$repositoryRoot\src"
-    $solutionFilters      = @('*.slnx', '*.sln')
-    $expectedSolutions    = 1
-    $dotNetCommand        = 'dotnet'
-    $buildConfiguration   = 'Release'
-    $testLogger           = 'console;verbosity=normal'
-    $installerTestPath    = "$repositoryRoot\tests\installer\InstallerScripts.Tests.ps1"
-    $pesterMinimumVersion = '5.0'
+    $scriptsToExecute = @(
+        [pscustomobject]@{ Enabled = $true; FilePath = "$deploymentRoot\build-test.ps1" }
+        [pscustomobject]@{ Enabled = $true; FilePath = "$deploymentRoot\invoke-nuget-packaging.ps1" }
+        [pscustomobject]@{ Enabled = $true; FilePath = "$deploymentRoot\invoke-nuget-packages-cleanup.ps1" }
+    )
 
-    return [pscustomobject]@{
-        RepositoryRoot       = $repositoryRoot
-        SolutionFolder       = $solutionFolder
-        SolutionFilters      = $solutionFilters
-        ExpectedSolutions    = $expectedSolutions
-        DotNetCommand        = $dotNetCommand
-        BuildConfiguration   = $buildConfiguration
-        TestLogger           = $testLogger
-        InstallerTestPath    = $installerTestPath
-        PesterMinimumVersion = $pesterMinimumVersion
-    }
-}
-
-function Get-SolutionFile($configuration)
-{
-    $solutionFolder    = $configuration.SolutionFolder
-    $solutionFilters   = $configuration.SolutionFilters
-    $expectedSolutions = $configuration.ExpectedSolutions
-
-    $solutionFiles = $solutionFilters |% {
-        $solutionFilter = $_
-        Get-ChildItem -Path $solutionFolder -Filter $solutionFilter -File
+    $configuration = [pscustomobject]@{
+        CiRoot                = $ciRoot
+        ConfigPath            = $configPath
+        GeneratedConfigFolder = $generatedConfigFolder
+        GeneratedConfigPath   = $generatedConfigPath
     }
 
-    $solutionCount = @($solutionFiles).Count
-    if ($solutionCount -ne $expectedSolutions)
-    {
-        throw "ci: expected $expectedSolutions solution file in $solutionFolder, found $solutionCount"
-    }
-
-    $solutionFile = $solutionFiles | Select-Object -First 1
-    return $solutionFile
+    $configuration | Add-Member -NotePropertyName EnabledScripts -NotePropertyValue @($scriptsToExecute |? { $_.Enabled })
+    return $configuration
 }
 
 function Add-RuntimeConfiguration($configuration)
 {
-    $solutionFile = Get-SolutionFile $configuration
-    $solutionPath = $solutionFile.FullName
-    $configuration | Add-Member -NotePropertyName 'SolutionPath' -NotePropertyValue $solutionPath -Force
+    $now          = Get-Date
+    $dateField    = $now.ToString('yyyyMMdd')
+    $timeField    = [int]$now.ToString('HHmmss')
+    $buildVersion = "1.0.$dateField.$timeField"
+
+    $configuration | Add-Member -NotePropertyName BuildVersion -NotePropertyValue $buildVersion -Force
+    Write-Log "build version $buildVersion"
+
     return $configuration
 }
 
-function Invoke-Build($configuration)
+function Invoke-PreflightCheck($configuration)
 {
-    $solutionPath       = $configuration.SolutionPath
-    $dotNetCommand      = $configuration.DotNetCommand
-    $buildConfiguration = $configuration.BuildConfiguration
-    Write-Log "build $buildConfiguration $solutionPath"
+    $enabledScripts = $configuration.EnabledScripts
+    $configPath     = $configuration.ConfigPath
 
-    & $dotNetCommand build $solutionPath --configuration $buildConfiguration --nologo
+    if (!(Test-Path $configPath))
+    {
+        throw "environment config not found: $configPath"
+    }
+
+    if ($enabledScripts.Count -eq 0)
+    {
+        throw "no build step is enabled in $($configuration.CiRoot)\ci.ps1; a run with nothing enabled would report complete having done nothing"
+    }
+
+    $enabledScripts |% {
+        $script = $_
+        if (!(Test-Path $script.FilePath))
+        {
+            throw "build step not found: $($script.FilePath)"
+        }
+
+        Write-Log "build step enabled: $($script.FilePath)"
+    }
+}
+
+function Invoke-PrepareConfiguration($configuration)
+{
+    $configPath = $configuration.ConfigPath
+    $generatedConfigPath = $configuration.GeneratedConfigPath
+    $generatedConfigFolder = $configuration.GeneratedConfigFolder
+    $buildVersion = $configuration.BuildVersion
+
+    $null = New-Item -ItemType Directory -Path $generatedConfigFolder -Force
+    Copy-Item -Path $configPath -Destination $generatedConfigPath -Force
+
+    $settings = Get-Content -Path $generatedConfigPath -Raw | ConvertFrom-Json
+    $settings | Add-Member -NotePropertyName buildVersion -NotePropertyValue $buildVersion -Force
+    $settings | ConvertTo-Json -Depth 10 | Set-Content -Path $generatedConfigPath -Encoding utf8
+    Write-Log "config $configPath -> $generatedConfigPath, buildVersion $buildVersion"
+}
+
+function Invoke-BuildStep($configuration, $script)
+{
+    $scriptPath = $script.FilePath
+    Write-Log "=== $scriptPath ==="
+
+    & $scriptPath
     if ($LASTEXITCODE -ne 0)
     {
-        throw "ci: $dotNetCommand build failed with exit code $LASTEXITCODE"
+        throw "$scriptPath failed with exit code $LASTEXITCODE"
     }
+
+    Write-Log "$scriptPath complete" 'pass'
 }
 
-function Invoke-Test($configuration)
+function Invoke-BuildSteps($configuration)
 {
-    $solutionPath       = $configuration.SolutionPath
-    $dotNetCommand      = $configuration.DotNetCommand
-    $buildConfiguration = $configuration.BuildConfiguration
-    $testLogger         = $configuration.TestLogger
-    Write-Log "test $solutionPath"
+    $enabledScripts = $configuration.EnabledScripts
 
-    & $dotNetCommand test $solutionPath --configuration $buildConfiguration --no-build --nologo --logger $testLogger
-    if ($LASTEXITCODE -ne 0)
-    {
-        throw "ci: $dotNetCommand test failed with exit code $LASTEXITCODE"
+    $enabledScripts |% {
+        $script = $_
+        Invoke-BuildStep $configuration $script
     }
+
+    Write-Log '=== CI complete ===' 'pass'
 }
 
-function Invoke-InstallerTest($configuration)
-{
-    $installerTestPath    = $configuration.InstallerTestPath
-    $pesterMinimumVersion = $configuration.PesterMinimumVersion
-    Write-Log "installer test $installerTestPath"
-
-    $null = Import-Module Pester -MinimumVersion $pesterMinimumVersion
-    $testResult  = Invoke-Pester -Path $installerTestPath -Output Normal -PassThru
-    $failedCount = $testResult.FailedCount
-    if ($failedCount -ne 0)
-    {
-        throw "ci: installer test failed: $failedCount test(s)"
-    }
-}
-
-$configuration = Get-Configuration
+$configuration = Get-Configuration $Environment
 $configuration = Add-RuntimeConfiguration $configuration
-
-if ($Check -in @('ci', 'all', 'build'))
-{
-    Invoke-Build $configuration
-}
-
-if ($Check -in @('ci', 'all', 'test'))
-{
-    Invoke-Test $configuration
-}
-
-if ($Check -in @('ci', 'all', 'test', 'installer'))
-{
-    Invoke-InstallerTest $configuration
-}
-
-Write-Log "ci passed ($Check)"
+Invoke-PreflightCheck $configuration
+Invoke-PrepareConfiguration $configuration
+Invoke-BuildSteps $configuration

@@ -1,0 +1,10 @@
+{
+  "solutionFile": "src/AwsEmulatorSharp.slnx",
+  "projectFile": "src/AwsEmulatorSharp.Host/AwsEmulatorSharp.Host.csproj",
+  "configuration": "Release",
+  "durationBudgetSeconds": 600,
+  "deploymentExecutable": "AwsEmulatorSharp.Host.exe",
+  "sharedFeedPath": "C:\\git\\internal\\a_shared_nuget_repo",
+  "feedRetentionCount": 5,
+  "buildXmlFile": "build.xml"
+}
